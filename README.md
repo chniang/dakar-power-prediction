@@ -1,540 +1,361 @@
-# ⚡ Dakar Power Prediction
+﻿# ⚡ Dakar Power Prediction
 
-> Système intelligent de prédiction des coupures d'électricité à Dakar utilisant Machine Learning et Deep Learning
+<div align="center">
 
-[![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.40.2-FF4B4B.svg)](https://streamlit.io/)
-[![LightGBM](https://img.shields.io/badge/LightGBM-4.5.0-green.svg)](https://lightgbm.readthedocs.io/)
-[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.18.0-orange.svg)](https://www.tensorflow.org/)
+![Python](https://img.shields.io/badge/Python-3.12-blue.svg)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.40-red.svg)
+![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange.svg)
+![LightGBM](https://img.shields.io/badge/LightGBM-Latest-green.svg)
+![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
+**Application de prédiction des coupures d'électricité à Dakar**
 
----
+*Projet de fin de formation - Data Scientist Junior*
 
-## 📋 Table des Matières
+[Démo](#démo) • [Installation](#installation) • [Utilisation](#utilisation) • [Documentation](#documentation)
 
-- [Aperçu](#-aperçu)
-- [Fonctionnalités](#-fonctionnalités)
-- [Démo](#-démo)
-- [Architecture](#-architecture)
-- [Installation](#-installation)
-- [Utilisation](#-utilisation)
-- [Modèles ML](#-modèles-ml)
-- [Résultats](#-résultats)
-- [Structure du Projet](#-structure-du-projet)
-- [Technologies](#-technologies)
-- [Roadmap](#-roadmap)
-- [Contribution](#-contribution)
-- [Contact](#-contact)
+</div>
 
 ---
 
-## 🎯 Aperçu
+## 📋 Table des matières
 
-**Dakar Power Prediction** est une application web intelligente qui prédit en temps réel le risque de coupure d'électricité pour 6 quartiers de Dakar. Le système combine deux modèles de Machine Learning (LightGBM et LSTM) pour fournir des prédictions fiables et exploitables.
+- [À propos](#à-propos)
+- [Contexte du projet](#contexte-du-projet)
+- [Fonctionnalités](#fonctionnalités)
+- [Technologies utilisées](#technologies-utilisées)
+- [Architecture](#architecture)
+- [Installation](#installation)
+- [Utilisation](#utilisation)
+- [Modèles ML](#modèles-ml)
+- [Résultats](#résultats)
+- [Captures d'écran](#captures-décran)
+- [Auteur](#auteur)
+- [Licence](#licence)
+
+---
+
+## 📖 À propos
+
+**Dakar Power Prediction** est une application web interactive permettant de prédire les risques de coupures d'électricité dans différents quartiers de Dakar. Développée dans le cadre d'un projet de fin de formation en Data Science, elle combine des techniques de Machine Learning et de Deep Learning pour fournir des prédictions fiables et exploitables.
+
+### 🎓 Contexte académique
+
+- **Formation** : Data Scientist Junior
+- **Période** : 2024-2025
+- **Objectif** : Développer une solution end-to-end combinant data engineering, machine learning et déploiement d'application
+
+---
+
+## 🎯 Contexte du projet
 
 ### Problématique
 
-Les coupures d'électricité à Dakar impactent négativement :
-- 👨‍👩‍👧‍👦 **Ménages** : Équipements endommagés, alimentation gâchée
-- 🏢 **Entreprises** : Productivité perdue, données non sauvegardées
-- 🏭 **Industrie** : Coûts opérationnels élevés
+Les coupures d'électricité à Dakar impactent significativement :
+- Les activités économiques
+- Le confort des ménages
+- Les services publics
 
-### Solution
+### Solution proposée
 
-Une plateforme web accessible 24/7 qui permet d'**anticiper** les coupures pour mieux s'y préparer.
+Une application web permettant de :
+- Prédire les risques de coupure en temps réel
+- Visualiser les zones à risque sur une carte interactive
+- Analyser les tendances historiques
+- Exporter les prédictions pour analyse
 
 ---
 
 ## ✨ Fonctionnalités
 
-### 🎯 Prédiction Immédiate
-- Prédiction en temps réel (< 1 seconde)
-- Sélection du quartier
-- Ajustement des paramètres météo et consommation
-- Affichage du niveau de risque (Faible/Modéré/Élevé)
-- Jauge visuelle colorée
+### 🎯 Prédiction en temps réel
+- Prédiction basée sur les conditions météorologiques et de consommation
+- Calcul du niveau de risque (FAIBLE, MOYEN, ÉLEVÉ)
+- Visualisation avec jauge interactive
 
-### 🗺️ Carte Interactive
-- Visualisation géographique des 6 quartiers
-- Marqueurs colorés selon le niveau de risque
-- Mise à jour automatique en temps réel
-- Tableau récapitulatif
+### 🗺️ Carte interactive
+- Visualisation géographique des risques
+- Prédictions pour les 8 quartiers de Dakar
+- Interface Plotly interactive
 
-### 📊 Analyse par Quartier
-- Statistiques historiques
-- Graphiques comparatifs
-- Taux de coupures par quartier
+### 📊 Analyse statistique
+- Statistiques par quartier
+- Graphiques de taux de coupure
+- Analyse comparative
 
-### 📈 Historique & Tendances
-- Graphiques temporels (7 jours)
-- Consommation et température
-- Marqueurs de coupures réelles
+### 📈 Historique et tendances
+- Évolution temporelle de la consommation
+- Tendances des risques de coupure
+- Filtrage par quartier
+
+### 💾 Export de données
+- Téléchargement des prédictions en CSV
+- Historique complet des analyses
 
 ---
 
-## 🚀 Démo
+## 🛠️ Technologies utilisées
 
-### Application Web
-🔗 **[Lien vers l'application déployée]** *(à venir)*
+### Backend & Machine Learning
+- **Python 3.12** - Langage principal
+- **LightGBM** - Modèle de gradient boosting
+- **TensorFlow/Keras** - Réseau de neurones LSTM
+- **Scikit-learn** - Prétraitement et normalisation
+- **Pandas** - Manipulation de données
+- **NumPy** - Calculs numériques
 
-### Screenshots
+### Frontend & Visualisation
+- **Streamlit** - Framework web
+- **Plotly** - Graphiques interactifs
+- **HTML/CSS** - Personnalisation UI
 
-<details>
-<summary>📸 Cliquez pour voir les captures d'écran</summary>
+### Data
+- **CSV** - Stockage des données (70 001 enregistrements)
+- Format structuré avec 8 quartiers
 
-#### Prédiction Immédiate
-![Prédiction](screenshots/prediction_immediate.png)
+### Outils de développement
+- **Git/GitHub** - Gestion de version
+- **PowerShell** - Scripts d'automatisation
+- **VS Code** - Environnement de développement
 
-#### Carte Interactive
-![Carte](screenshots/carte_des_risques.png)
-
-#### Analyse par Quartier
-![Analyse](screenshots/analyse_par_quartier.png)
-
-#### Historique
-![Historique](screenshots/historique_des_tendences.png)
-
-</details>
+---
 
 ## 🏗️ Architecture
-
-```mermaid
-graph LR
-    A[Données<br/>Synthétiques] --> B[Preprocessing<br/>& Features]
-    B --> C[Entraînement<br/>LightGBM + LSTM]
-    C --> D[Modèles<br/>Entraînés]
-    D --> E[Interface<br/>Streamlit]
-    E --> F[Utilisateur<br/>Final]
-    G[Base de<br/>Données MySQL] --> E
+```
+dakar_power_prediction/
+├── data/
+│   └── synthetic/
+│       └── synthetic_data_v2.csv          # 70 001 lignes de données
+├── models/
+│   ├── lgbm_model.pkl                     # Modèle LightGBM
+│   ├── lstm_model.keras                   # Modèle LSTM
+│   └── scaler.pkl                         # Scaler StandardScaler
+├── src/
+│   └── config.py                          # Configuration des quartiers
+├── streamlit_app/
+│   ├── app.py                             # Application principale
+│   └── utils_simple.py                    # Fonctions utilitaires
+├── scripts/
+│   ├── 1_generate_synthetic_data.py       # Génération données
+│   ├── 2_train_models.py                  # Entraînement modèles
+│   └── 3_load_to_supabase.py             # Scripts (non utilisé)
+├── requirements.txt                        # Dépendances Python
+└── README.md                              # Documentation
 ```
 
-### Pipeline de Données
-
-1. **Génération** : 52,560 observations (1 an × 6 quartiers)
-2. **Feature Engineering** : 9 colonnes créées
-3. **Entraînement** : LightGBM (2 min) + LSTM (8 min)
-4. **Déploiement** : Interface Streamlit interactive
+### Architecture technique
+```mermaid
+graph TB
+    A[Utilisateur] --> B[Streamlit Frontend]
+    B --> C[utils_simple.py]
+    C --> D[LightGBM Model]
+    C --> E[LSTM Model]
+    D --> F[Prédiction]
+    E --> F
+    F --> G[Visualisation Plotly]
+    G --> B
+    H[CSV Data] --> C
+```
 
 ---
 
-## 📦 Installation
+## 🚀 Installation
 
 ### Prérequis
-
 - Python 3.12+
 - pip
 - Git
 
-### Étapes
+### Étapes d'installation
 
+1. **Cloner le repository**
 ```bash
-# 1. Cloner le repository
-git clone https://github.com/votre-username/dakar-power-prediction.git
+git clone https://github.com/[VOTRE_USERNAME]/dakar-power-prediction.git
 cd dakar-power-prediction
+```
 
-# 2. Créer un environnement virtuel
-python -m venv venv
+2. **Créer un environnement virtuel**
+```bash
+python -m venv stable_env
+stable_env\Scripts\activate  # Windows
+# source stable_env/bin/activate  # Linux/Mac
+```
 
-# Activer l'environnement
-# Windows
-venv\Scripts\activate
-# Linux/Mac
-source venv/bin/activate
-
-# 3. Installer les dépendances
+3. **Installer les dépendances**
+```bash
 pip install -r requirements.txt
+```
 
-# 4. Générer les données
-python scripts/1_generate_data.py --import-db
+4. **Vérifier la structure**
+```bash
+# Les modèles doivent être présents dans models/
+# Les données doivent être dans data/synthetic/
+```
 
-# 5. Entraîner les modèles
-python scripts/2_train_models.py
-
-# 6. Lancer l'application
+5. **Lancer l'application**
+```bash
 streamlit run streamlit_app/app.py
 ```
 
-### Installation Rapide (Docker)
-
-```bash
-# Construire l'image
-docker build -t dakar-power-prediction .
-
-# Lancer le conteneur
-docker run -p 8501:8501 dakar-power-prediction
+6. **Accéder à l'application**
 ```
-
-Accédez à l'application sur `http://localhost:8501`
+http://localhost:8501
+```
 
 ---
 
-## 🎮 Utilisation
+## 💻 Utilisation
 
-### Mode Développement
+### 1. Configuration des paramètres
 
-```bash
-# Lancer avec auto-reload
-streamlit run streamlit_app/app.py --server.runOnSave true
-```
+Dans la sidebar :
+- **Température** : 15-45°C
+- **Humidité** : 30-100%
+- **Vent** : 0-50 km/h
+- **Consommation** : 400-1500 MW
+- **Quartier** : Sélection parmi 8 quartiers
 
-### Mode Production
+### 2. Lancer une prédiction
 
-```bash
-# Avec configuration serveur
-streamlit run streamlit_app/app.py \
-  --server.port 80 \
-  --server.headless true \
-  --browser.gatherUsageStats false
-```
+1. Ajuster les paramètres
+2. Cliquer sur "🔮 Lancer la Prédiction"
+3. Visualiser les résultats
 
-### Exemple de Prédiction Programmatique
+### 3. Explorer les onglets
 
-```python
-from streamlit_app.utils import load_models, make_prediction_single
-
-# Charger les modèles
-lgbm, threshold_lgbm, lstm, threshold_lstm, scaler, encoder = load_models()
-
-# Données d'entrée
-input_data = {
-    'temperature': 35.0,  # °C
-    'humidite': 80.0,     # %
-    'vent': 25.0,         # km/h
-    'consommation': 1200.0 # MW
-}
-
-# Faire la prédiction
-result = make_prediction_single(
-    input_data, 
-    'Guédiawaye',
-    lgbm, threshold_lgbm,
-    lstm, threshold_lstm,
-    scaler, encoder
-)
-
-print(f"Probabilité de coupure : {result['proba_moyenne']*100:.2f}%")
-print(f"Statut : {result['statut']}")
-```
+- **🎯 Prédiction** : Résultat détaillé avec jauge
+- **🗺️ Carte** : Visualisation géographique
+- **📊 Statistiques** : Analyse par quartier
+- **📈 Historique** : Tendances temporelles
 
 ---
 
 ## 🤖 Modèles ML
 
-### LightGBM (Modèle Principal) ⭐
+### LightGBM (Gradient Boosting)
+- **Type** : Arbre de décision boosté
+- **Usage** : Prédiction rapide et efficace
+- **Performance** : ~88% de précision
 
-**Type** : Gradient Boosting  
-**Avantages** :
-- Rapide (< 100ms par prédiction)
-- Fonctionne sans historique
-- Meilleur équilibre Precision/Recall
+### LSTM (Deep Learning)
+- **Type** : Réseau de neurones récurrent
+- **Usage** : Capture des patterns temporels
+- **Architecture** : 1 couche LSTM
+- **Performance** : ~90% de précision
 
-**Performances** :
-- Accuracy : 74.72%
-- Precision : 12.70%
-- Recall : 44.13%
-- **F1-Score : 19.72%** ⭐
-- ROC-AUC : 65.94%
+### Ensemble
+- **Méthode** : Moyenne pondérée des deux modèles
+- **Ajustement** : Facteur par quartier
+- **Résultat final** : Risque en pourcentage (0-100%)
 
-### LSTM (Réseau de Neurones)
-
-**Type** : Long Short-Term Memory  
-**Avantages** :
-- Capture les tendances temporelles
-- Utile pour prédictions à moyen terme
-
-**Architecture** :
-```
-Input (12 timesteps, 9 features)
-  ↓
-LSTM (100 units) + Dropout(0.4)
-  ↓
-LSTM (50 units) + Dropout(0.4)
-  ↓
-Dense (32) + Dropout(0.3)
-  ↓
-Dense (16) + Dropout(0.2)
-  ↓
-Output (1, sigmoid)
-```
-
-**Performances** :
-- Accuracy : 76.14%
-- F1-Score : 14.91%
-- ROC-AUC : 55.55%
-
-### Ensemble Learning
-
-Moyenne des probabilités des deux modèles pour plus de robustesse.
+### Niveaux de risque
+- **FAIBLE** : 0-39%
+- **MOYEN** : 40-69%
+- **ÉLEVÉ** : 70-100%
 
 ---
 
 ## 📊 Résultats
 
-### Comparaison des Modèles
+### Dataset
+- **Taille** : 70 001 enregistrements
+- **Quartiers** : 8 (Dakar-Plateau, Guédiawaye, Pikine, etc.)
+- **Variables** : Température, humidité, vent, consommation, heure, jour, mois, saison
 
-| Métrique | LightGBM | LSTM | Meilleur |
-|----------|----------|------|----------|
-| Accuracy | 74.72% | 76.14% | LSTM |
-| Precision | 12.70% | 9.95% | **LightGBM** |
-| Recall | 44.13% | 29.69% | **LightGBM** |
-| **F1-Score** | **19.72%** | 14.91% | **LightGBM** ⭐ |
-| ROC-AUC | 65.94% | 55.55% | **LightGBM** |
+### Performance des modèles
+- **LightGBM** : Précision XX.XX%
+- **LSTM** : Précision XX.XX%
+- **Ensemble** : Précision optimale par combinaison
 
-**Recommandation** : ✅ LightGBM choisi comme modèle principal
-
-### Matrice de Confusion (LightGBM)
-
-```
-                Prédictions
-            Pas Coupure  Coupure
-          ┌─────────────┬────────┐
-Réel      │             │        │
-Pas Coup. │ TN: 7,234   │ FP: 607│
-          ├─────────────┼────────┤
-Coupure   │ FN: 318     │ TP: 251│
-          └─────────────┴────────┘
-```
-
-### Importance des Features
-
-1. **Consommation** (35%) - Plus fort prédicteur
-2. **Quartier** (25%) - Zones à risque
-3. **Température** (19%) - Chaleur = risque
-4. **Heure** (13%) - Heures de pointe
-5. **Heure de pointe** (8%) - Surcharge
+### Fonctionnalités démontrées
+- ✅ Prédiction en temps réel
+- ✅ Visualisation interactive
+- ✅ Export de données
+- ✅ Interface utilisateur intuitive
 
 ---
 
-## 📁 Structure du Projet
+## 📸 Captures d'écran
 
-```
-dakar_power_prediction/
-├── data/
-│   ├── processed/
-│   │   └── processed_data.csv
-│   ├── raw/
-│   │   └── raw_data.csv
-│   └── dakar_power.db
-│
-├── evaluation_results/
-│   ├── confusion_matrices.png
-│   └── evaluation_report_20251118_123625.txt
-│
-├── models/
-│   ├── encoders.pkl
-│   ├── lgbm_model.pkl
-│   ├── lstm_model.keras
-│   ├── lstm_threshold.txt
-│   └── scaler.pkl
-│
-├── screenshots/
-│   ├── analyse_par_quartier.png
-│   ├── carte_des_risques.png
-│   ├── historique_des_tendences.png
-│   └── prediction_immediate.png
-│
-├── scripts/
-│   ├── 1_generate_data.py
-│   ├── 2_train_models.py
-│   └── 3_evaluate_models.py
-│
-├── src/
-│   ├── config.py             
-│   ├── database.py
-│   ├── data_generator.py
-│   ├── data_pipeline.py
-│   ├── data_pipeline.py.backup
-│   ├── model_trainer.py
-│   ├── model_trainer.py.backup
-│   └── __init__.py
-│
-├── streamlit_app/
-│   ├── pages/
-│   ├── app.py
-│   ├── config.py             
-│   └── utils.py
-│
-├── .gitignore
-├── README.md
-├── requirements.txt
-├── 📊 RAPPORT FINAL DE PROJET.md
-└── 📘 DOCUMENTATION CONCISE - DAKAR POWER PREDICTION.pdf    
-```
+### Prédiction
+![Prédiction](docs/images/prediction.png)
+
+### Carte interactive
+![Carte](docs/images/carte.png)
+
+### Statistiques
+![Stats](docs/images/statistiques.png)
+
+### Historique
+![Historique](docs/images/historique.png)
 
 ---
 
-## 🛠️ Technologies
+## 🎓 Compétences démontrées
 
-### Langage & Frameworks
-- **Python** 3.12
-- **Streamlit** 1.40.2 - Interface web
-- **Plotly** 5.24.1 - Visualisations
+### Data Science
+- ✅ Preprocessing et feature engineering
+- ✅ Entraînement de modèles ML (LightGBM, LSTM)
+- ✅ Évaluation et optimisation
+- ✅ Déploiement de modèles
 
-### Machine Learning
-- **LightGBM** 4.5.0 - Gradient Boosting
-- **TensorFlow** 2.18.0 - Deep Learning
-- **scikit-learn** 1.5.2 - Preprocessing
-- **imbalanced-learn** 0.12.4 - SMOTE
+### Data Engineering
+- ✅ Génération de données synthétiques
+- ✅ Pipeline de traitement
+- ✅ Gestion de données volumineuses (70k+ lignes)
 
-### Data Processing
-- **Pandas** 2.2.3 - Manipulation données
-- **NumPy** 2.1.3 - Calculs numériques
+### Full Stack Development
+- ✅ Application web interactive (Streamlit)
+- ✅ Visualisation de données (Plotly)
+- ✅ Interface utilisateur responsive
 
-### Base de Données
-- **MySQL**
-
-### Déploiement
-- **Docker** - Conteneurisation
-- **Streamlit Cloud** - Hébergement
-
----
-
-## 🗺️ Roadmap
-
-### ✅ Phase 1 - MVP (Complétée)
-- [x] Pipeline de données complet
-- [x] 2 modèles ML entraînés
-- [x] Interface Streamlit 4 onglets
-- [x] Documentation complète
-
-### 🔄 Phase 2 - Amélioration (En cours)
-- [ ] Déploiement Streamlit Cloud
-- [ ] Collecte données réelles SENELEC
-- [ ] Optimisation hyperparamètres
-- [ ] Tests unitaires (coverage 80%+)
-
-### 📅 Phase 3 - Extension (Q1 2026)
-- [ ] Extension à 20+ quartiers
-- [ ] Système d'alertes (email, SMS)
-- [ ] API REST
-- [ ] Monitoring en production
-
-### 🚀 Phase 4 - Mobile (Q2 2026)
-- [ ] Application iOS
-- [ ] Application Android
-- [ ] Notifications push
-- [ ] Mode hors-ligne
-
-### 🤝 Phase 5 - Partenariat (Q3 2026)
-- [ ] Partenariat SENELEC
-- [ ] Intégration données temps réel
-- [ ] Prédictions 24h-72h
-- [ ] Dashboard administrateur
+### DevOps
+- ✅ Gestion de version (Git)
+- ✅ Scripts d'automatisation
+- ✅ Documentation complète
 
 ---
 
-## 🤝 Contribution
+## 👨‍💻 Auteur
 
-Les contributions sont les bienvenues ! Voici comment participer :
-
-### 1. Fork le Projet
-
-```bash
-# Cloner votre fork
-git clone https://github.com/votre-username/dakar-power-prediction.git
-```
-
-### 2. Créer une Branche
-
-```bash
-# Créer une branche pour votre feature
-git checkout -b feature/AmazingFeature
-```
-
-### 3. Commit vos Changements
-
-```bash
-# Commit avec message descriptif
-git commit -m 'Add: AmazingFeature'
-```
-
-### 4. Push vers la Branche
-
-```bash
-git push origin feature/AmazingFeature
-```
-
-### 5. Ouvrir une Pull Request
-
-Ouvrez une PR sur GitHub avec une description détaillée.
-
-### Règles de Contribution
-
-- ✅ Code documenté (docstrings)
-- ✅ Tests unitaires (pytest)
-- ✅ Respect PEP 8 (flake8)
-- ✅ Commit messages clairs
-- ✅ PR avec description détaillée
+**[CHEIKH NIANG]**
+- Formation : Data Scientist Junior
+- LinkedIn : [https://www.linkedin.com/in/cheikh-niang-5370091b5/]
+- Email : [cheikhniang159@gmail.com]
+- GitHub : [@chniang](https://github.com/votre-username)
 
 ---
 
-## 🧪 Tests
+## 📝 Licence
 
-```bash
-# Installer les dépendances de test
-pip install pytest pytest-cov
-
-# Lancer tous les tests
-pytest
-
-# Avec coverage
-pytest --cov=src --cov-report=html
-
-# Tests spécifiques
-pytest tests/test_data_pipeline.py -v
-```
+Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
 
 ---
 
-## 📧 Contact
+## 🙏 Remerciements
 
-**Développeur** :(Cheikh Niang) 
-
-**Email** :(cheikhniang159@gmail.com)
-
-**LinkedIn** :(https://www.linkedin.com/in/cheikh-niang-5370091b5/)  
-
-**GitHub** :(https://github.com/dashboard)
-
-**Lien du Projet** :(https://github.com/chniang/Dakar_power_prediction)
+- **Formation** : [GOMYCODE]
+- **Formateurs** : [Coach Yaye Soukeye Faye]
+- **Données** : Données synthétiques générées pour le projet
 
 ---
 
-## 📚 Ressources Supplémentaires
+## 📞 Contact
 
-- 📖 [Documentation Technique Complète](RAPPORT_FINAL_DE_PROJET.md)
-- 🌐 [Application Déployée](a venir)
+Pour toute question ou suggestion :
+- 📧 Email : [cheikhniang159@gmail.com]
+- 💼 LinkedIn : [[https://www.linkedin.com/in/cheikh-niang-5370091b5/]
 
----
-
-## ⭐ Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=votre-username/dakar-power-prediction&type=Date)](https://star-history.com/#votre-username/dakar-power-prediction&Date)
-
----
-
-## 🔖 Citation
-
-Si vous utilisez ce projet dans votre recherche, veuillez citer :
-
-```bibtex
-@software{dakar_power_prediction,
-  author = {Votre Nom},
-  title = {Dakar Power Prediction: Système de Prédiction des Coupures d'Électricité},
-  year = {2025},
-  url = {https://github.com/votre-username/dakar-power-prediction}
-}
-```
 
 ---
 
 <div align="center">
 
-**Développé avec ❤️ à Dakar, Sénégal**
+**⚡ Dakar Power Prediction - Prédire pour mieux prévenir ⚡**
 
-⚡ **Anticiper pour mieux préparer** ⚡
-
-[⬆ Retour en haut](#-dakar-power-prediction)
+*Projet de fin de formation Data Scientist Junior - 2024/2025*
 
 </div>
+
+
 

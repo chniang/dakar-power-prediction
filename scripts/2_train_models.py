@@ -1,346 +1,240 @@
-# Fichier : scripts/2_train_models.py
-# Script d'entraînement V6.1 SANS SMOTE (Correction Finale + Fix Keras + Extensions .pkl)
-# ========================================================
+"""
+Entraînement des modèles ML avec les données locales CSV
+VERSION CORRIGÉE - Utilise synthetic_data_v2.csv
+"""
 
-import sys
-from pathlib import Path
-import numpy as np
 import pandas as pd
-import joblib
-import warnings
-warnings.filterwarnings('ignore')
-
-sys.path.append(str(Path(__file__).parent.parent))
-
-# Import des modules internes
-try:
-    from src.data_pipeline import DataPipeline
-    from src.config import (
-        LGBM_MODEL_FILE, LSTM_MODEL_FILE,
-        SEQUENCE_LENGTH, LSTM_EPOCHS, LSTM_BATCH_SIZE
-    )
-except ImportError as e:
-    print(f"⚠️ AVERTISSEMENT: Impossible d'importer un module interne. Erreur: {e}")
-    # ✅ CORRECTION : Extensions cohérentes (.pkl et .h5)
-    LGBM_MODEL_FILE = Path("models/lgbm_model.pkl")  # ✅ .pkl
-    LSTM_MODEL_FILE = Path("models/lstm_model.h5")   # ✅ .h5
-    SEQUENCE_LENGTH = 12
-    LSTM_EPOCHS = 50
-
-DEFAULT_LSTM_BATCH_SIZE = 256
-if 'LSTM_BATCH_SIZE' not in locals():
-    LSTM_BATCH_SIZE = DEFAULT_LSTM_BATCH_SIZE
-
-# ML
+import numpy as np
+import pickle
+from pathlib import Path
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 import lightgbm as lgb
-from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score,
-    f1_score, roc_auc_score, confusion_matrix,
-    classification_report
+from tensorflow import keras
+from tensorflow.keras import layers
+import sys
+
+# Ajouter le dossier parent
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from src.config import MODEL_CONFIG
+
+print("=" * 80)
+print("🤖 ENTRAÎNEMENT MODÈLES - DONNÉES CSV LOCALES (70,000 lignes)")
+print("=" * 80)
+
+# ============================================================================
+# ÉTAPE 1 : CHARGER LES DONNÉES DEPUIS LE CSV
+# ============================================================================
+
+print("\n📂 ÉTAPE 1 : Chargement des données depuis CSV")
+print("-" * 80)
+
+csv_path = Path('data/synthetic/synthetic_data_v2.csv')
+
+if not csv_path.exists():
+    print(f"❌ Fichier non trouvé : {csv_path}")
+    print("Exécutez d'abord : python scripts/generate_new_data.py")
+    sys.exit(1)
+
+df = pd.read_csv(csv_path)
+print(f"✅ {len(df)} lignes chargées")
+
+# Vérifier les quartiers
+quartiers = sorted(df['quartier'].unique())
+print(f"\n📊 Quartiers dans les données ({len(quartiers)}) :")
+for q in quartiers:
+    count = len(df[df['quartier'] == q])
+    pct = count / len(df) * 100
+    print(f"  {q:25s}: {count:6d} ({pct:5.2f}%)")
+
+# Vérifier distribution coupures
+print(f"\n📊 Distribution coupures :")
+for val, count in df['coupure'].value_counts().items():
+    pct = count / len(df) * 100
+    label = "Non" if val == 0 else "Oui"
+    print(f"  {label:5s}: {count:6d} ({pct:5.2f}%)")
+
+# ============================================================================
+# ÉTAPE 2 : PRÉPARER LES FEATURES
+# ============================================================================
+
+print("\n🔧 ÉTAPE 2 : Préparation des features")
+print("-" * 80)
+
+# Features à utiliser
+feature_cols = MODEL_CONFIG['features']
+target_col = MODEL_CONFIG['target']
+
+print(f"Features utilisées ({len(feature_cols)}) :")
+for i, feat in enumerate(feature_cols, 1):
+    print(f"  {i}. {feat}")
+
+X = df[feature_cols].values
+y = df[target_col].values
+
+print(f"\n✅ Features préparées")
+print(f"  X shape : {X.shape}")
+print(f"  y shape : {y.shape}")
+print(f"  Coupures : {y.sum()} ({y.mean()*100:.2f}%)")
+
+# ============================================================================
+# ÉTAPE 3 : SPLIT TRAIN/TEST
+# ============================================================================
+
+print("\n🔀 ÉTAPE 3 : Split train/test (80/20)")
+print("-" * 80)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y,
+    test_size=MODEL_CONFIG['test_size'],
+    random_state=MODEL_CONFIG['random_state'],
+    stratify=y
 )
 
-# DL
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, BatchNormalization
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
+print(f"✅ Train : {len(X_train):,} samples ({y_train.mean()*100:.2f}% coupures)")
+print(f"✅ Test  : {len(X_test):,} samples ({y_test.mean()*100:.2f}% coupures)")
 
+# ============================================================================
+# ÉTAPE 4 : NORMALISATION
+# ============================================================================
 
-class ImprovedModelTrainer:
-    """Entraîneur V6.1 - SANS SMOTE + Fix Keras + Extensions cohérentes"""
-    
-    def __init__(self):
-        if 'DataPipeline' in globals():
-            self.pipeline = DataPipeline()
-        else:
-            raise RuntimeError("La classe DataPipeline n'a pas pu être chargée.")
-        
-        self.lgbm_model = None
-        self.lstm_model = None
-    
-    def train_lgbm_improved(self, X_train, y_train, X_test, y_test):
-        """Entraîne LightGBM SANS SMOTE (correction V6)"""
-        print("\n" + "="*60)
-        print("🌳 ENTRAÎNEMENT LIGHTGBM V6 (SANS SMOTE)")
-        print("="*60)
-        
-        print(f"\n⚖️ Distribution originale (AUCUN rééchantillonnage) :")
-        print(f"   Classe 0 (pas de coupure) : {(y_train == 0).sum():,}")
-        print(f"   Classe 1 (coupure)        : {(y_train == 1).sum():,}")
-        print(f"   Ratio coupures            : {y_train.mean()*100:.2f}%")
-        
-        params = {
-            'objective': 'binary',
-            'metric': 'auc',
-            'boosting_type': 'gbdt',
-            'num_leaves': 31,
-            'max_depth': 6,
-            'learning_rate': 0.05,
-            'feature_fraction': 0.9,
-            'bagging_fraction': 0.9,
-            'bagging_freq': 5,
-            'min_child_samples': 50,
-            'min_split_gain': 0.01,
-            'reg_alpha': 0.1,
-            'reg_lambda': 0.1,
-            'scale_pos_weight': 10.0,
-            'verbose': -1,
-            'n_estimators': 500,
-            'random_state': 42
-        }
-        
-        train_data = lgb.Dataset(X_train, label=y_train)
-        test_data = lgb.Dataset(X_test, label=y_test, reference=train_data)
-        
-        print("\n🔄 Entraînement en cours (données réelles uniquement)...")
-        self.lgbm_model = lgb.train(
-            params,
-            train_data,
-            num_boost_round=params['n_estimators'],
-            valid_sets=[train_data, test_data],
-            valid_names=['train', 'test'],
-            callbacks=[
-                lgb.early_stopping(stopping_rounds=50, verbose=True),
-                lgb.log_evaluation(period=100)
-            ]
-        )
-        
-        print("\n✅ Entraînement terminé !")
-        
-        print("\n📊 Importance des features (top 5) :")
-        feature_importance = self.lgbm_model.feature_importance(importance_type='gain')
-        feature_names = [f'feature_{i}' for i in range(len(feature_importance))]
-        
-        importance_df = pd.DataFrame({
-            'feature': feature_names,
-            'importance': feature_importance
-        }).sort_values('importance', ascending=False)
-        
-        for idx, row in importance_df.head(5).iterrows():
-            print(f"   {row['feature']}: {row['importance']:.0f}")
-        
-        print("\n📊 Recherche du seuil optimal...")
-        y_pred_proba = self.lgbm_model.predict(X_test)
-        
-        best_threshold = self._find_best_threshold(y_test, y_pred_proba)
-        print(f"   🎯 Seuil optimal trouvé : {best_threshold:.3f}")
-        
-        y_pred = (y_pred_proba >= best_threshold).astype(int)
-        
-        self._print_metrics(y_test, y_pred, y_pred_proba, "LightGBM V6 (Sans SMOTE)")
-        
-        # ✅ CORRECTION : Sauvegarder avec .pkl (joblib)
-        LGBM_MODEL_FILE.parent.mkdir(parents=True, exist_ok=True)
-        joblib.dump({
-            'model': self.lgbm_model,
-            'threshold': best_threshold
-        }, LGBM_MODEL_FILE)
-        print(f"\n💾 Modèle sauvegardé : {LGBM_MODEL_FILE} (.pkl)")
-        
-        return self.lgbm_model
-    
-    def build_improved_lstm(self, input_shape):
-        """Construit l'architecture LSTM optimisée - VERSION CORRIGÉE V6.1"""
-        model = Sequential([
-            Input(shape=input_shape),
-            
-            LSTM(100, return_sequences=True),
-            BatchNormalization(),
-            Dropout(0.4),
-            
-            LSTM(50, return_sequences=False),
-            BatchNormalization(),
-            Dropout(0.4),
-            
-            Dense(32, activation='relu'),
-            BatchNormalization(),
-            Dropout(0.3),
-            
-            Dense(16, activation='relu'),
-            Dropout(0.2),
-            
-            Dense(1, activation='sigmoid')
-        ])
-        
-        optimizer = keras.optimizers.Adam(learning_rate=0.001)
-        
-        model.compile(
-            optimizer=optimizer,
-            loss='binary_crossentropy',
-            metrics=[
-                'accuracy',
-                tf.keras.metrics.AUC(name='auc'),
-                tf.keras.metrics.Precision(name='precision'),
-                tf.keras.metrics.Recall(name='recall')
-            ]
-        )
-        
-        return model
-    
-    def train_lstm_improved(self, X_train, y_train, X_test, y_test):
-        """Entraîne le modèle LSTM avec architecture corrigée"""
-        print("\n" + "="*60)
-        print("🧠 ENTRAÎNEMENT LSTM V6.1 (Fix Keras)")
-        print("="*60)
-        
-        print(f"\n🔄 Création des séquences (longueur={SEQUENCE_LENGTH})...")
-        X_train_seq, y_train_seq = self.pipeline.create_sequences(X_train, y_train, SEQUENCE_LENGTH)
-        X_test_seq, y_test_seq = self.pipeline.create_sequences(X_test, y_test, SEQUENCE_LENGTH)
-        
-        print(f"   Train: {X_train_seq.shape}")
-        print(f"   Test:  {X_test_seq.shape}")
-        
-        neg_count = (y_train_seq == 0).sum()
-        pos_count = (y_train_seq == 1).sum()
-        class_weight = {0: 1.0, 1: neg_count / pos_count}
-        print(f"\n⚖️ Poids des classes : {class_weight}")
-        
-        print("\n🏗️ Construction du modèle LSTM (avec Input() explicite)...")
-        input_shape = (X_train_seq.shape[1], X_train_seq.shape[2])
-        self.lstm_model = self.build_improved_lstm(input_shape)
-        
-        print("\n📐 Architecture du modèle :")
-        self.lstm_model.summary()
-        
-        callbacks = [
-            EarlyStopping(
-                monitor='val_auc',
-                patience=10,
-                mode='max',
-                restore_best_weights=True,
-                verbose=1
-            ),
-            ModelCheckpoint(
-                str(LSTM_MODEL_FILE),
-                monitor='val_auc',
-                mode='max',
-                save_best_only=True,
-                verbose=1
-            ),
-            ReduceLROnPlateau(
-                monitor='val_loss',
-                factor=0.3,
-                patience=10,
-                min_lr=0.00001,
-                verbose=1
-            )
-        ]
-        
-        print(f"\n🔄 Entraînement en cours (Batch: {LSTM_BATCH_SIZE}, Epochs: {LSTM_EPOCHS})...")
-        history = self.lstm_model.fit(
-            X_train_seq, y_train_seq,
-            validation_data=(X_test_seq, y_test_seq),
-            epochs=LSTM_EPOCHS,
-            batch_size=LSTM_BATCH_SIZE,
-            class_weight=class_weight,
-            callbacks=callbacks,
-            verbose=2
-        )
-        
-        print("\n✅ Entraînement terminé !")
-        
-        print("\n📊 Évaluation sur le test set :")
-        y_pred_proba = self.lstm_model.predict(X_test_seq, verbose=0).flatten()
-        
-        best_threshold = self._find_best_threshold(y_test_seq, y_pred_proba)
-        print(f"   🎯 Seuil optimal trouvé : {best_threshold:.3f}")
-        
-        y_pred = (y_pred_proba >= best_threshold).astype(int)
-        
-        self._print_metrics(y_test_seq, y_pred, y_pred_proba, "LSTM V6.1")
-        
-        threshold_file = LSTM_MODEL_FILE.parent / "lstm_threshold.txt"
-        with open(threshold_file, 'w') as f:
-            f.write(str(best_threshold))
-        
-        print(f"\n💾 Modèle sauvegardé : {LSTM_MODEL_FILE} (.h5)")
-        print(f"💾 Seuil sauvegardé : {threshold_file}")
-        
-        return self.lstm_model, history
-    
-    def _find_best_threshold(self, y_true, y_pred_proba):
-        """Trouve le meilleur seuil pour maximiser F1-Score"""
-        thresholds = np.arange(0.05, 0.95, 0.01)
-        best_f1 = 0
-        best_threshold = 0.5
-        
-        for threshold in thresholds:
-            y_pred = (y_pred_proba >= threshold).astype(int)
-            f1 = f1_score(y_true, y_pred, zero_division=0)
-            
-            if f1 > best_f1:
-                best_f1 = f1
-                best_threshold = threshold
-        
-        return best_threshold
-    
-    def _print_metrics(self, y_true, y_pred, y_pred_proba, model_name):
-        """Affiche toutes les métriques de performance"""
-        acc = accuracy_score(y_true, y_pred)
-        prec = precision_score(y_true, y_pred, zero_division=0)
-        rec = recall_score(y_true, y_pred, zero_division=0)
-        f1 = f1_score(y_true, y_pred, zero_division=0)
-        auc = roc_auc_score(y_true, y_pred_proba)
-        
-        print(f"\n📈 Métriques - {model_name}")
-        print("─" * 40)
-        print(f"   Accuracy  : {acc:.4f} ({acc*100:.2f}%)")
-        print(f"   Precision : {prec:.4f}")
-        print(f"   Recall    : {rec:.4f}")
-        print(f"   F1-Score  : {f1:.4f}")
-        print(f"   ROC-AUC   : {auc:.4f}")
-        
-        cm = confusion_matrix(y_true, y_pred)
-        print(f"\n📊 Matrice de confusion :")
-        print(f"   TN: {cm[0,0]:6d}  |  FP: {cm[0,1]:6d}")
-        print(f"   FN: {cm[1,0]:6d}  |  TP: {cm[1,1]:6d}")
-        
-        print(f"\n📋 Rapport détaillé :")
-        print(classification_report(y_true, y_pred,
-                                    target_names=['Pas de coupure', 'Coupure'],
-                                    zero_division=0))
-    
-    def train_all(self):
-        """Entraîne tous les modèles séquentiellement"""
-        print("\n" + "="*60)
-        print("🚀 ENTRAÎNEMENT V6.1 - SANS SMOTE + Fix Keras + Extensions .pkl")
-        print("="*60)
-        
-        print("\n1️⃣ Préparation des données...")
-        data = self.pipeline.process_for_training(save_processed=True)
-        
-        X_train = data['X_train']
-        X_test = data['X_test']
-        y_train = data['y_train']
-        y_test = data['y_test']
-        
-        print("\n2️⃣ Entraînement LightGBM (sans SMOTE)...")
-        self.train_lgbm_improved(X_train, y_train, X_test, y_test)
-        
-        print("\n3️⃣ Entraînement LSTM (avec Input() corrigé)...")
-        self.train_lstm_improved(X_train, y_train, X_test, y_test)
-        
-        print("\n" + "="*60)
-        print("✅ TOUS LES MODÈLES ENTRAÎNÉS !")
-        print("="*60)
+print("\n📐 ÉTAPE 4 : Normalisation des données")
+print("-" * 80)
 
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
 
-def main():
-    """Fonction principale du script"""
-    try:
-        trainer = ImprovedModelTrainer()
-        trainer.train_all()
-        
-        print("\n🎉 Entraînement terminé !")
-        print(f"📁 Modèles sauvegardés dans : {LGBM_MODEL_FILE.parent}")
-    except RuntimeError as e:
-        print(f"\n❌ ERREUR FATALE: {e}")
-    except Exception as e:
-        print(f"\n❌ ERREUR: {e}")
-        import traceback
-        traceback.print_exc()
+print(f"✅ Scaler entraîné")
+print(f"  Moyennes : {scaler.mean_[:4]}")
+print(f"  Écarts-types : {scaler.scale_[:4]}")
 
+# ============================================================================
+# ÉTAPE 5 : ENTRAÎNEMENT LIGHTGBM
+# ============================================================================
 
-if __name__ == "__main__":
-    main()
+print("\n🌳 ÉTAPE 5 : Entraînement LightGBM")
+print("-" * 80)
+
+lgb_params = {
+    'objective': 'binary',
+    'metric': 'binary_logloss',
+    'boosting_type': 'gbdt',
+    'num_leaves': 31,
+    'learning_rate': 0.05,
+    'feature_fraction': 0.9,
+    'bagging_fraction': 0.8,
+    'bagging_freq': 5,
+    'verbose': -1,
+    'random_state': 42
+}
+
+train_data = lgb.Dataset(X_train_scaled, label=y_train)
+test_data = lgb.Dataset(X_test_scaled, label=y_test, reference=train_data)
+
+print("🔄 Entraînement en cours...")
+lgb_model = lgb.train(
+    lgb_params,
+    train_data,
+    num_boost_round=100,
+    valid_sets=[test_data],
+    callbacks=[lgb.early_stopping(stopping_rounds=10)]
+)
+
+# Évaluation
+y_pred_lgb = lgb_model.predict(X_test_scaled)
+accuracy_lgb = ((y_pred_lgb > 0.5) == y_test).mean()
+
+print(f"✅ LightGBM entraîné")
+print(f"  Précision test : {accuracy_lgb*100:.2f}%")
+print(f"  Prédiction moyenne : {y_pred_lgb.mean()*100:.2f}%")
+
+# ============================================================================
+# ÉTAPE 6 : ENTRAÎNEMENT LSTM
+# ============================================================================
+
+print("\n🧠 ÉTAPE 6 : Entraînement LSTM")
+print("-" * 80)
+
+# Reshape pour LSTM (samples, timesteps, features)
+X_train_lstm = X_train_scaled.reshape(-1, 1, X_train_scaled.shape[1])
+X_test_lstm = X_test_scaled.reshape(-1, 1, X_test_scaled.shape[1])
+
+# Modèle LSTM
+lstm_model = keras.Sequential([
+    layers.LSTM(64, input_shape=(1, X_train_scaled.shape[1]), return_sequences=True),
+    layers.Dropout(0.2),
+    layers.LSTM(32),
+    layers.Dropout(0.2),
+    layers.Dense(16, activation='relu'),
+    layers.Dense(1, activation='sigmoid')
+])
+
+lstm_model.compile(
+    optimizer='adam',
+    loss='binary_crossentropy',
+    metrics=['accuracy']
+)
+
+print("🔄 Entraînement en cours (peut prendre 10-15 minutes)...")
+history = lstm_model.fit(
+    X_train_lstm, y_train,
+    validation_data=(X_test_lstm, y_test),
+    epochs=50,
+    batch_size=32,
+    verbose=1,
+    callbacks=[
+        keras.callbacks.EarlyStopping(patience=5, restore_best_weights=True)
+    ]
+)
+
+# Évaluation
+y_pred_lstm = lstm_model.predict(X_test_lstm, verbose=0).flatten()
+accuracy_lstm = ((y_pred_lstm > 0.5) == y_test).mean()
+
+print(f"\n✅ LSTM entraîné")
+print(f"  Précision test : {accuracy_lstm*100:.2f}%")
+print(f"  Prédiction moyenne : {y_pred_lstm.mean()*100:.2f}%")
+
+# ============================================================================
+# ÉTAPE 7 : SAUVEGARDE DES MODÈLES
+# ============================================================================
+
+print("\n💾 ÉTAPE 7 : Sauvegarde des modèles")
+print("-" * 80)
+
+models_dir = Path('models')
+models_dir.mkdir(parents=True, exist_ok=True)
+
+# Sauvegarder LightGBM
+lgb_path = models_dir / 'lgbm_model.pkl'
+with open(lgb_path, 'wb') as f:
+    pickle.dump(lgb_model, f)
+print(f"✅ LightGBM sauvegardé : {lgb_path}")
+
+# Sauvegarder LSTM
+lstm_path = models_dir / 'lstm_model.keras'
+lstm_model.save(lstm_path)
+print(f"✅ LSTM sauvegardé : {lstm_path}")
+
+# Sauvegarder Scaler
+scaler_path = models_dir / 'scaler.pkl'
+with open(scaler_path, 'wb') as f:
+    pickle.dump(scaler, f)
+print(f"✅ Scaler sauvegardé : {scaler_path}")
+
+# ============================================================================
+# RÉSUMÉ FINAL
+# ============================================================================
+
+print("\n" + "=" * 80)
+print("📊 RÉSUMÉ FINAL")
+print("=" * 80)
+print(f"✅ Données : {len(df):,} lignes, {len(quartiers)} quartiers")
+print(f"✅ LightGBM : {accuracy_lgb*100:.2f}% précision")
+print(f"✅ LSTM : {accuracy_lstm*100:.2f}% précision")
+print(f"✅ Modèles sauvegardés dans : {models_dir}/")
+print("\n" + "=" * 80)
+print("✅ ENTRAÎNEMENT TERMINÉ")
+print("=" * 80)
+print("\nProchaine étape : streamlit run streamlit_app/app.py")

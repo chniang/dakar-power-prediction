@@ -1,281 +1,261 @@
-# Fichier : src/database.py
-# Gestion de la base de données Supabase (PostgreSQL)
-# =========================================================
-
+"""Gestion Base de DonnÃ©es via API REST Supabase"""
+import requests
 import pandas as pd
-from sqlalchemy import create_engine, text
-from sqlalchemy.pool import NullPool
 from datetime import datetime
-import streamlit as st
-from src.config import DATABASE_URL, QUARTIERS_DAKAR 
 
-class SupabaseDB:
-    """Gestionnaire de base de données Supabase"""
-    
-    def __init__(self):
-        """Initialiser la connexion à Supabase"""
-        try:
-            # Créer le moteur SQLAlchemy sans pool (pour Streamlit Cloud)
-            # DATABASE_URL utilise l'hôte du Pooler de sessions de Supabase
-            self.engine = create_engine(
-                DATABASE_URL,
-                poolclass=NullPool,
-                connect_args={
-                    "connect_timeout": 10,
-                    "sslmode": "require"  # Supabase nécessite SSL
-                }
-            )
-            if self.test_connection():
-                # Tente d'initialiser les entrées de la table stats_quartiers si elles sont manquantes
-                self._initialize_quartier_stats()
-        except Exception as e:
-            st.error(f"❌ Erreur connexion Supabase : {e}")
-            self.engine = None
-    
-    def test_connection(self):
-        """Tester la connexion"""
-        if not self.engine:
-            return False
-            
-        try:
-            with self.engine.connect() as conn:
-                conn.execute(text("SELECT 1"))
-                st.success("✅ Connexion Supabase réussie")
-                return True
-        except Exception as e:
-            # Afficher l'erreur de connexion détaillée si elle se produit
-            st.error(f"❌ Test connexion échoué : {e}")
-            return False
-    
-    def save_prediction(self, quartier, temp, hum, vent, conso, pred_lgb, pred_lstm, risque_global):
-        """
-        Sauvegarder une prédiction dans la table 'predictions' et mettre à jour 'stats_quartiers'.
-        """
-        if not self.engine:
-            return False
-        
-        try:
-            # Insertion dans la table predictions
-            query_insert = text("""
-                INSERT INTO predictions (
-                    quartier, temperature, humidite, vitesse_vent, consommation,
-                    prediction_lgb, prediction_lstm, risque_global, date_heure
-                ) VALUES (
-                    :quartier, :temp, :hum, :vent, :conso,
-                    :pred_lgb, :pred_lstm, :risque_global, :date_heure
-                )
-            """)
-            
-            with self.engine.connect() as conn:
-                conn.execute(query_insert, {
-                    'quartier': quartier,
-                    'temp': float(temp),
-                    'hum': float(hum),
-                    'vent': float(vent),
-                    'conso': float(conso),
-                    'pred_lgb': float(pred_lgb),
-                    'pred_lstm': float(pred_lstm),
-                    'risque_global': float(risque_global),
-                    'date_heure': datetime.now()
-                })
-                conn.commit()
-            
-            # Mettre à jour les stats du quartier
-            self._update_quartier_stats(quartier, risque_global)
+from src.config import SUPABASE_CONFIG
+
+BASE_URL = SUPABASE_CONFIG['url']
+API_KEY = SUPABASE_CONFIG['key']
+
+HEADERS = {
+    'apikey': API_KEY,
+    'Authorization': f'Bearer {API_KEY}',
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+}
+
+def test_connection():
+    """Teste la connexion Ã  l'API Supabase."""
+    try:
+        response = requests.get(f"{BASE_URL}/rest/v1/", headers=HEADERS, timeout=10)
+        if response.status_code in [200, 404]:
+            print("âœ… Connexion Supabase API rÃ©ussie")
             return True
-            
-        except Exception as e:
-            st.warning(f"⚠️ Erreur sauvegarde (predictions) : {e}")
+        else:
+            print(f"âŒ Erreur API : {response.status_code}")
             return False
+    except Exception as e:
+        print(f"âŒ Erreur de connexion : {e}")
+        return False
+
+def get_create_tables_sql():
+    """Retourne le SQL pour crÃ©er les tables."""
+    return """
+CREATE TABLE IF NOT EXISTS enregistrements (
+    id BIGSERIAL PRIMARY KEY,
+    date_heure TIMESTAMPTZ NOT NULL,
+    quartier VARCHAR(50) NOT NULL,
+    temp_celsius FLOAT NOT NULL,
+    humidite_percent INTEGER NOT NULL,
+    vitesse_vent FLOAT NOT NULL,
+    conso_megawatt INTEGER NOT NULL,
+    heure INTEGER NOT NULL,
+    jour_semaine INTEGER NOT NULL,
+    mois INTEGER NOT NULL,
+    saison INTEGER NOT NULL,
+    is_peak_hour INTEGER NOT NULL,
+    coupure INTEGER NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS predictions (
+    id BIGSERIAL PRIMARY KEY,
+    date_heure TIMESTAMPTZ NOT NULL,
+    quartier VARCHAR(50) NOT NULL,
+    temp_celsius FLOAT NOT NULL,
+    humidite_percent INTEGER NOT NULL,
+    vitesse_vent FLOAT NOT NULL,
+    conso_megawatt INTEGER NOT NULL,
+    proba_lgbm FLOAT NOT NULL,
+    proba_lstm FLOAT NOT NULL,
+    proba_moyenne FLOAT NOT NULL,
+    prediction INTEGER NOT NULL,
+    modele_utilise VARCHAR(50),
+    seuil_decision FLOAT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_enregistrements_date ON enregistrements(date_heure DESC);
+CREATE INDEX IF NOT EXISTS idx_predictions_quartier ON predictions(quartier);
+"""
+
+def insert_data_bulk(df, table_name='enregistrements'):
+    """InsÃ¨re un DataFrame en bulk via l'API REST."""
+    print(f"\nðŸ“Š Insertion de {len(df):,} lignes dans '{table_name}'...")
     
-    def _update_quartier_stats(self, quartier, risque_global):
-        """Mettre à jour les statistiques d'un quartier (total_predictions, taux_risque, etc.)"""
-        if not self.engine:
-            return
+    try:
+        data = df.to_dict('records')
+        
+        for record in data:
+            if 'date_heure' in record and isinstance(record['date_heure'], pd.Timestamp):
+                record['date_heure'] = record['date_heure'].isoformat()
+        
+        batch_size = 100
+        total_batches = (len(data) + batch_size - 1) // batch_size
+        
+        for i in range(0, len(data), batch_size):
+            batch = data[i:i+batch_size]
+            response = requests.post(
+                f"{BASE_URL}/rest/v1/{table_name}",
+                headers=HEADERS,
+                json=batch,
+                timeout=30
+            )
             
-        try:
-            # Requête corrigée pour éviter les conflits dans les calculs UPDATE
-            query = text("""
-                -- 1. Incrémenter les compteurs
-                UPDATE stats_quartiers
-                SET 
-                    total_predictions = total_predictions + 1,
-                    coupures_predites = coupures_predites + CASE WHEN :risque >= 50 THEN 1 ELSE 0 END,
-                    derniere_maj = :now
-                WHERE quartier = :quartier;
-                
-                -- 2. Calculer le taux de risque avec les nouvelles valeurs
-                UPDATE stats_quartiers
-                SET 
-                    taux_risque = (coupures_predites::float / total_predictions * 100)
-                WHERE quartier = :quartier AND total_predictions > 0;
-            """)
+            if response.status_code not in [200, 201]:
+                print(f"âŒ Erreur batch {i//batch_size + 1}")
+                return False
             
-            with self.engine.connect() as conn:
-                conn.execute(query, {
-                    'quartier': quartier,
-                    'risque': float(risque_global),
-                    'now': datetime.now()
-                })
-                conn.commit()
-        except Exception as e:
-            # Afficher le warning pour le débogage de l'UPDATE
-            st.warning(f"⚠️ Erreur mise à jour stats quartier ({quartier}): {e}") 
-            pass  
+            print(f"  Batch {(i//batch_size)+1}/{total_batches} : {len(batch)} lignes")
+        
+        print(f"âœ… {len(df):,} lignes insÃ©rÃ©es !")
+        return True
+        
+    except Exception as e:
+        print(f"âŒ Erreur : {e}")
+        return False
+
+def save_prediction_to_db(quartier, temp, humidite, vent, conso, proba_lgbm, 
+                          proba_lstm, proba_moyenne, prediction, 
+                          modele_utilise="LightGBM+LSTM", seuil_decision=50.0):
+    """Sauvegarde une prÃ©diction."""
+    try:
+        data = {
+            'quartier': quartier,
+            'temp_celsius': float(temp),
+            'humidite_percent': int(humidite),
+            'vitesse_vent': float(vent),
+            'conso_megawatt': int(conso),
+            'proba_lgbm': float(proba_lgbm),
+            'proba_lstm': float(proba_lstm),
+            'proba_moyenne': float(proba_moyenne),
+            'prediction': int(prediction),
+            'modele_utilise': modele_utilise,
+            'seuil_decision': float(seuil_decision),
+            'date_heure': datetime.now().isoformat()
+        }
+        
+        response = requests.post(
+            f"{BASE_URL}/rest/v1/predictions",
+            headers=HEADERS,
+            json=data,
+            timeout=10
+        )
+        return response.status_code in [200, 201]
+    except:
+        return False
+
+def get_predictions_history(limit=100):
+    """RÃ©cupÃ¨re l'historique des prÃ©dictions."""
+    try:
+        response = requests.get(
+            f"{BASE_URL}/rest/v1/predictions",
+            headers=HEADERS,
+            params={'order': 'date_heure.desc', 'limit': limit},
+            timeout=10
+        )
+        if response.status_code == 200:
+            return pd.DataFrame(response.json())
+        return pd.DataFrame()
+    except:
+        return pd.DataFrame()
+
+def get_statistics_by_quartier(quartier_filter=None):
+    """
+    RÃ©cupÃ¨re les statistiques par quartier depuis les ENREGISTREMENTS SYNTHÃ‰TIQUES.
     
-    def _initialize_quartier_stats(self):
-        """Initialiser les statistiques des quartiers (si la table est vide)"""
-        if not self.engine:
-            return
-
-        try:
-            # QUARTIERS_DAKAR est une liste (selon src/config.py)
-            quartiers_list = QUARTIERS_DAKAR 
-
-            # 1. Récupérer les quartiers déjà présents dans la table
-            existing_quartiers_query = text("SELECT quartier FROM stats_quartiers")
+    Args:
+        quartier_filter: Si spÃ©cifiÃ©, filtre pour un quartier particulier
+    
+    Returns:
+        DataFrame avec les stats par quartier
+    """
+    try:
+        # RÃ©cupÃ©rer TOUS les enregistrements (avec pagination)
+        all_data = []
+        offset = 0
+        limit = 1000
+        
+        while True:
+            params = {
+                'select': 'quartier,coupure,temp_celsius,conso_megawatt',
+                'order': 'id',
+                'limit': limit,
+                'offset': offset
+            }
             
-            with self.engine.connect() as conn:
-                existing_quartiers = [row[0] for row in conn.execute(existing_quartiers_query).fetchall()]
-                
-                # 2. Identifier les quartiers manquants
-                quartiers_to_insert = [q for q in quartiers_list if q not in existing_quartiers]
-                
-                # 3. Insérer les quartiers manquants
-                if quartiers_to_insert:
-                    insert_query = text("""
-                        INSERT INTO stats_quartiers (quartier, total_predictions, coupures_predites, taux_risque, derniere_maj)
-                        VALUES (:quartier, 0, 0, 0.0, :now)
-                    """)
-                    for quartier in quartiers_to_insert:
-                        conn.execute(insert_query, {'quartier': quartier, 'now': datetime.now()})
-                    conn.commit()
-                    st.info(f"✅ Initialisation des stats de {len(quartiers_to_insert)} quartiers effectuée.")
-
-        except Exception as e:
-            st.warning(f"⚠️ Erreur initialisation stats quartiers : {e}")
-
-    def get_recent_predictions(self, limit=100):
-        """Récupérer les dernières prédictions"""
-        if not self.engine:
+            # Filtrer par quartier si spÃ©cifiÃ©
+            if quartier_filter:
+                params['quartier'] = f'eq.{quartier_filter}'
+            
+            response = requests.get(
+                f"{BASE_URL}/rest/v1/enregistrements",
+                headers=HEADERS,
+                params=params,
+                timeout=15
+            )
+            
+            if response.status_code != 200:
+                break
+            
+            data = response.json()
+            
+            if not data:
+                break
+            
+            all_data.extend(data)
+            
+            if len(data) < limit:
+                break
+            
+            offset += limit
+        
+        if not all_data:
             return pd.DataFrame()
         
-        try:
-            query = text("""
-                SELECT 
-                    quartier,
-                    temperature,
-                    humidite,
-                    vitesse_vent,
-                    consommation,
-                    prediction_lgb,
-                    prediction_lstm,
-                    risque_global,
-                    date_heure
-                FROM predictions
-                ORDER BY date_heure DESC
-                LIMIT :limit
-            """)
-            
-            with self.engine.connect() as conn:
-                df = pd.read_sql(query, conn, params={'limit': limit})
-            
-            return df
-            
-        except Exception as e:
-            st.warning(f"⚠️ Erreur récupération historique : {e}")
-            return pd.DataFrame()
-    
-    def get_quartier_stats(self):
-        """Récupérer les statistiques par quartier"""
-        if not self.engine:
-            return pd.DataFrame()
+        # CrÃ©er DataFrame
+        df = pd.DataFrame(all_data)
         
-        try:
-            query = text("""
-                SELECT 
-                    quartier,
-                    total_predictions,
-                    coupures_predites,
-                    taux_risque,
-                    derniere_maj
-                FROM stats_quartiers
-                ORDER BY taux_risque DESC
-            """)
-            
-            with self.engine.connect() as conn:
-                df = pd.read_sql(query, conn)
-            
-            return df
-            
-        except Exception as e:
-            st.warning(f"⚠️ Erreur stats quartiers : {e}")
-            return pd.DataFrame()
-    
-    def get_stats_by_date_range(self, start_date, end_date, quartier=None):
-        """Récupérer les stats sur une période"""
-        if not self.engine:
-            return pd.DataFrame()
+        # Calculer les statistiques par quartier
+        stats = df.groupby('quartier').agg({
+            'coupure': ['count', 'sum', 'mean'],
+            'temp_celsius': 'mean',
+            'conso_megawatt': 'mean'
+        }).reset_index()
         
-        try:
-            # Le reste de vos méthodes de récupération de données...
-            if quartier:
-                query = text("""
-                    SELECT 
-                        DATE(date_heure) as date,
-                        AVG(risque_global) as risque_moyen,
-                        COUNT(*) as nb_predictions
-                    FROM predictions
-                    WHERE date_heure BETWEEN :start_date AND :end_date
-                      AND quartier = :quartier
-                    GROUP BY DATE(date_heure)
-                    ORDER BY date
-                """)
-                params = {'start_date': start_date, 'end_date': end_date, 'quartier': quartier}
-            else:
-                query = text("""
-                    SELECT 
-                        DATE(date_heure) as date,
-                        AVG(risque_global) as risque_moyen,
-                        COUNT(*) as nb_predictions
-                    FROM predictions
-                    WHERE date_heure BETWEEN :start_date AND :end_date
-                    GROUP BY DATE(date_heure)
-                    ORDER BY date
-                """)
-                params = {'start_date': start_date, 'end_date': end_date}
-            
-            with self.engine.connect() as conn:
-                df = pd.read_sql(query, conn, params=params)
-            
-            return df
-            
-        except Exception as e:
-            st.warning(f"⚠️ Erreur stats période : {e}")
-            return pd.DataFrame()
-    
-    def clear_old_predictions(self, days=30):
-        """Supprimer les prédictions de plus de X jours"""
-        if not self.engine:
-            return 0
+        stats.columns = ['quartier', 'total_enregistrements', 'total_coupures', 
+                        'taux_coupure', 'temp_moyenne', 'conso_moyenne']
         
-        try:
-            query = text("""
-                DELETE FROM predictions
-                WHERE date_heure < NOW() - INTERVAL ':days days'
-            """)
-            
-            with self.engine.connect() as conn:
-                result = conn.execute(query, {'days': days})
-                conn.commit()
-                return result.rowcount
-            
-        except Exception as e:
-            st.warning(f"⚠️ Erreur nettoyage : {e}")
-            return 0
+        # Calculer le taux en pourcentage
+        stats['risque_moyen'] = stats['taux_coupure']  # DÃ©jÃ  entre 0 et 1
+        
+        # Trier par taux de coupure dÃ©croissant
+        stats = stats.sort_values('risque_moyen', ascending=False)
+        
+        return stats
+        
+    except Exception as e:
+        print(f"âŒ Erreur get_statistics_by_quartier: {e}")
+        import traceback
+        traceback.print_exc()
+        return pd.DataFrame()
 
-# Instance globale
-@st.cache_resource
-def get_db():
-    """Obtenir l'instance de la base de données (avec cache)"""
-    return SupabaseDB()
+def get_table_count(table_name):
+    """Compte les lignes dans une table."""
+    try:
+        response = requests.get(
+            f"{BASE_URL}/rest/v1/{table_name}",
+            headers={**HEADERS, 'Prefer': 'count=exact'},
+            params={'select': 'id', 'limit': 1},
+            timeout=10
+        )
+        if response.status_code == 200:
+            count = response.headers.get('Content-Range', '0').split('/')[-1]
+            return int(count) if count != '*' else 0
+        return 0
+    except:
+        return 0
+
+def print_database_summary():
+    """Affiche un rÃ©sumÃ© de la base de donnÃ©es."""
+    print("\n" + "=" * 70)
+    print(" ðŸ“Š RÃ‰SUMÃ‰ DE LA BASE DE DONNÃ‰ES SUPABASE")
+    print("=" * 70)
+    
+    count_enr = get_table_count('enregistrements')
+    count_pred = get_table_count('predictions')
+    
+    print(f"ðŸ“‹ Enregistrements : {count_enr:,} lignes")
+    print(f"ðŸ”® PrÃ©dictions : {count_pred:,} lignes")
+    print("=" * 70)

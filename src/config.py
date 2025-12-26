@@ -1,151 +1,119 @@
-﻿# Fichier : src/config.py
-# Configuration centrale avec Supabase (PostgreSQL)
-# =========================================================
+﻿"""
+Configuration globale du projet Dakar Power Prediction
+VERSION FINALE - 8 quartiers
+"""
 
-from pathlib import Path
-import os
-from dotenv import load_dotenv
+# ============================================================================
+# CHEMINS DES FICHIERS
+# ============================================================================
 
-# Charger les variables d'environnement
-load_dotenv()
+MODELS_DIR = 'models/'
+DATA_DIR = 'data/'
+SYNTHETIC_DIR = 'data/synthetic/'
+# ============================================================================
+# CONFIGURATION SUPABASE
+# ============================================================================
 
-# Chemins du projet
-BASE_DIR = Path(__file__).parent.parent
-DATA_DIR = BASE_DIR / 'data'
-RAW_DATA_DIR = DATA_DIR / 'raw'
-PROCESSED_DATA_DIR = DATA_DIR / 'processed'
-MODELS_DIR = BASE_DIR / 'models'
-
-# Créer les dossiers s'ils n'existent pas
-for directory in [DATA_DIR, RAW_DATA_DIR, PROCESSED_DATA_DIR, MODELS_DIR]:
-    directory.mkdir(parents=True, exist_ok=True)
-
-# Fichiers de données
-METEO_FILE = RAW_DATA_DIR / 'data_meteo_dakar.csv'
-POWER_FILE = RAW_DATA_DIR / 'data_energy_dakar.csv'
-PROCESSED_FILE = PROCESSED_DATA_DIR / 'dakar_power_ml_ready.csv'
-
-# Alias pour compatibilité avec data_pipeline.py
-RAW_DATA_FILE = RAW_DATA_DIR / 'dakar_power_raw.csv'
-PROCESSED_DATA_FILE = PROCESSED_DATA_DIR / 'dakar_power_ml_ready.csv'
-
-# Modèles
-LGBM_MODEL_FILE = MODELS_DIR / "lgbm_model.pkl"
-LSTM_MODEL_FILE = MODELS_DIR / "lstm_model.h5"
-SCALER_FILE = MODELS_DIR / "scaler.pkl"
-ENCODER_FILE = MODELS_DIR / "encoders.pkl"
-ENCODERS_FILE = MODELS_DIR / "encoders.pkl"  # Alias pour compatibilité
-
-# ==========================================
-# CONFIGURATION DATABASE (SUPABASE/POSTGRESQL)
-# ==========================================
-
-# Pour Streamlit Cloud (utilise secrets.toml)
-try:
-    import streamlit as st
-    DB_CONFIG = {
-        'host': st.secrets["database"]["host"],
-        'port': st.secrets["database"]["port"],
-        'database': st.secrets["database"]["database"],
-        'user': st.secrets["database"]["user"],
-        'password': st.secrets["database"]["password"]
-    }
-except:
-    # Pour développement local (utilise .env)
-    DB_CONFIG = {
-        'host': os.getenv('DB_HOST', 'localhost'),
-        'port': os.getenv('DB_PORT', '5432'),
-        'database': os.getenv('DB_NAME', 'postgres'),
-        'user': os.getenv('DB_USER', 'postgres'),
-        'password': os.getenv('DB_PASSWORD', '')
-    }
-
-# SQLAlchemy connection string pour PostgreSQL
-DATABASE_URL = f"postgresql://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}"
-
-# ==========================================
-# FEATURES & QUARTIERS
-# ==========================================
-
-FEATURE_COLS = [
-    'temperature', 'humidite', 'vitesse_vent', 'consommation_electrique',
-    'heure', 'jour_semaine', 'mois', 'saison', 'est_weekend'
-]
-
-# Alias pour compatibilité avec data_pipeline.py
-FEATURE_COLUMNS = FEATURE_COLS
-FEATURES_TO_SCALE = ['temperature', 'humidite', 'vitesse_vent', 'consommation_electrique']
-TARGET_COLUMN = 'coupure'
-
-QUARTIERS_DAKAR = [
-    'Dakar-Plateau', 'Yoff', 'Mermoz-Sacré-Coeur',
-    'Parcelles Assainies', 'Guediawaye', 'Sicap-Liberté'
-]
-
-# ==========================================
-# COORDONNÉES DES QUARTIERS
-# ==========================================
-
-QUARTIER_COORDS = {
-    'Dakar-Plateau': {'lat': 14.6937, 'lon': -17.4441},
-    'Yoff': {'lat': 14.7500, 'lon': -17.4900},
-    'Mermoz-Sacré-Coeur': {'lat': 14.7200, 'lon': -17.4600},
-    'Parcelles Assainies': {'lat': 14.7800, 'lon': -17.4400},
-    'Guediawaye': {'lat': 14.7700, 'lon': -17.4200},
-    'Sicap-Liberté': {'lat': 14.7100, 'lon': -17.4500}
+SUPABASE_CONFIG = {
+    'url': 'https://krudbbmsixrejemqqphn.supabase.co',
+    'key': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtydWRiYm1zaXhyZWplbXFxcGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDc4NzAsImV4cCI6MjA3OTcyMzg3MH0.X4HEFRhR-WOsc0g-d70NAqLOy33qst7Z7z-EUIOnhjQ'
 }
 
-# ==========================================
-# SEUILS DE RISQUE
-# ==========================================
+# ============================================================================
+# QUARTIERS DE DAKAR (8 quartiers)
+# ============================================================================
+
+QUARTIERS_DAKAR = [
+    'Guediawaye',
+    'Parcelles Assainies',
+    'Pikine',
+    'Sicap-Liberte',
+    'Yoff',
+    'Mermoz-Sacre-Coeur',
+    'Dakar-Plateau',
+    'Fann'
+]
+
+# ============================================================================
+# COORDONNÉES GPS DES QUARTIERS
+# ============================================================================
+
+COORDONNEES_QUARTIERS = {
+    'Guediawaye': {'lat': 14.7692, 'lon': -17.4008},
+    'Parcelles Assainies': {'lat': 14.7586, 'lon': -17.4147},
+    'Pikine': {'lat': 14.7564, 'lon': -17.3924},
+    'Sicap-Liberte': {'lat': 14.7167, 'lon': -17.4677},
+    'Yoff': {'lat': 14.7539, 'lon': -17.4894},
+    'Mermoz-Sacre-Coeur': {'lat': 14.7206, 'lon': -17.4706},
+    'Dakar-Plateau': {'lat': 14.6928, 'lon': -17.4467},
+    'Fann': {'lat': 14.6937, 'lon': -17.4531}
+}
+
+# ============================================================================
+# AJUSTEMENTS PAR QUARTIER (facteur de risque)
+# ============================================================================
+
+QUARTIER_ADJUSTMENT = {
+    'Guediawaye': 1.15,
+    'Parcelles Assainies': 1.10,
+    'Pikine': 1.20,
+    'Sicap-Liberte': 1.05,
+    'Yoff': 1.00,
+    'Mermoz-Sacre-Coeur': 0.90,
+    'Dakar-Plateau': 0.85,
+    'Fann': 0.95
+}
+
+# ============================================================================
+# SEUILS DE RISQUE (en pourcentage)
+# ============================================================================
 
 SEUILS_RISQUE = {
-    'faible': 30,
-    'moyen': 50,
+    'faible': 40,
+    'moyen': 40,
     'eleve': 70
 }
 
-# Seuils (alias pour compatibilité avec utils.py)
-THRESHOLD_MODERATE = 30
-THRESHOLD_HIGH = 70
+# ============================================================================
+# PLAGES DE TEMPÉRATURE PAR SAISON
+# ============================================================================
 
-# ==========================================
-# PARAMÈTRES LSTM
-# ==========================================
-
-SEQUENCE_LENGTH = 12  # Longueur des séquences pour LSTM
-
-
-# ==========================================
-# PARAMÈTRES D'ENTRAÎNEMENT
-# ==========================================
-
-RANDOM_STATE = 42
-TEST_SIZE = 0.2
-VALIDATION_SPLIT = 0.2
-
-# Hyperparamètres LightGBM
-LGBM_PARAMS = {
-    'objective': 'binary',
-    'metric': 'binary_logloss',
-    'boosting_type': 'gbdt',
-    'num_leaves': 31,
-    'learning_rate': 0.05,
-    'feature_fraction': 0.9,
-    'bagging_fraction': 0.8,
-    'bagging_freq': 5,
-    'verbose': -1,
-    'random_state': RANDOM_STATE
+TEMPERATURE_RANGES = {
+    'hiver': (18, 28),
+    'printemps': (20, 30),
+    'ete': (24, 35),
+    'automne': (22, 32)
 }
 
-# Hyperparamètres LSTM
-LSTM_PARAMS = {
-    'units_1': 100,
-    'units_2': 50,
-    'dropout': 0.4,
-    'batch_size': 32,
-    'epochs': 50,
-    'learning_rate': 0.001
+# ============================================================================
+# PLAGES DE CONSOMMATION (MW)
+# ============================================================================
+
+CONSO_RANGES = {
+    'base': (400, 600),
+    'normale': (600, 900),
+    'pointe': (900, 1400)
 }
 
-print("✅ Configuration chargée (Supabase/PostgreSQL)")
+# ============================================================================
+# CONFIGURATION MODÈLES ML
+# ============================================================================
+
+MODEL_CONFIG = {
+    'features': [
+        'temp_celsius',
+        'humidite_percent',
+        'vitesse_vent',
+        'conso_megawatt',
+        'heure',
+        'jour_semaine',
+        'mois',
+        'saison',
+        'is_peak_hour'
+    ],
+    'target': 'coupure',
+    'test_size': 0.2,
+    'random_state': 42
+}
+
+print("✅ Config chargée : 8 quartiers")

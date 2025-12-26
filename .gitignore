@@ -1,53 +1,61 @@
-# Environnement virtuel
-stable_env/
-venv/
-.env/
-
-# Données brutes et sensibles
-data/raw/*
-data/*.db
-
-# Données dérivées
-data/processed/*
-
-# Modèles entraînés
-!models/.gitkeep
-
-# Résultats d'évaluation
-evaluation_results/*
-
-# Cache et fichiers système
-__pycache__/
+﻿# Python
 *.pyc
-*.pyo
-*.pyd
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+stable_env/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Streamlit cache
-.streamlit/
+# Streamlit
+.streamlit/cache/
+.streamlit/config.toml
 
-# Sauvegardes
-*.backup
+# Jupyter Notebook
+.ipynb_checkpoints
 
-# Fichiers temporaires
-*.tmp
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
 *.log
 
-# PDFs ou documents lourds
-*.pdf
-
-# Rapports
-📘 DOCUMENTATION CONCISE - DAKAR POWER PREDICTION.pdf
-
-# Secrets
-.streamlit/secrets.toml
+# Données sensibles
+*.env
 .env
 
+# Modèles (si trop volumineux, à décommenter)
+# models/*.pkl
+# models/*.keras
 
-# Secrets et configurations sensibles
-.env
-.streamlit/secrets.toml
+# Backups
+*_old*
+*_backup*
+*.bak
 
-# Environnement virtuel
-stable_env/
-venv/
-env/
