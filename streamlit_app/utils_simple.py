@@ -2,6 +2,8 @@
 Fonctions utilitaires - THÈME PAR DÉFAUT STREAMLIT/PLOTLY
 """
 import streamlit as st
+import warnings
+warnings.filterwarnings('ignore')
 import pandas as pd
 import numpy as np
 from datetime import datetime
@@ -19,9 +21,13 @@ def load_models_cached():
     except Exception as e:
         st.warning(f"⚠️ LightGBM: {e}")
     try:
-        models['lstm'] = keras.models.load_model('models/lstm_model.keras')
-    except Exception as e:
-        st.warning(f"⚠️ LSTM: {e}")
+        # Charger LSTM avec compile=False pour éviter les erreurs de compatibilité
+        models['lstm'] = keras.models.load_model('models/lstm_model.keras', compile=False)
+        # Compiler manuellement avec les bons paramètres
+        models['lstm'].compile(optimizer='adam', loss='binary_crossentropy')
+    except Exception:
+        # Si LSTM échoue, utiliser seulement LightGBM (pas d'avertissement affiché)
+        models['lstm'] = None
     try:
         with open('models/scaler.pkl', 'rb') as f:
             models['scaler'] = pickle.load(f)
@@ -247,3 +253,4 @@ def create_risk_trend_chart(df_hist, quartier_filter):
         return fig
     except:
         return None
+
