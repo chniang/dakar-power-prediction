@@ -1,8 +1,8 @@
-ï»¿FROM python:3.11-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copier les fichiers nÃ©cessaires
+# Copier les fichiers nécessaires
 COPY requirements.txt .
 COPY streamlit_app ./streamlit_app
 COPY models ./models
@@ -10,7 +10,7 @@ COPY data ./data
 COPY src ./src
 COPY .streamlit ./.streamlit
 
-# Installer les dÃ©pendances
+# Installer les dépendances
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Exposer le port
