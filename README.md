@@ -1,6 +1,6 @@
 ---
-title: Pr�diction de puissance de Dakar
-emoji: ?
+title: Prédiction de puissance de Dakar
+emoji: ⚡
 colorFrom: yellow
 colorTo: blue
 sdk: docker
