@@ -1,73 +1,73 @@
-ï»¿---
+---
 title: Dakar Power Prediction
-emoji: âš¡
+emoji: ?
 colorFrom: yellow
-colorTo: orange
+colorTo: blue
 sdk: docker
 pinned: false
 license: mit
 ---
 
-# âš¡ Dakar Power Prediction - PrÃ©diction des Coupures d'Ã‰lectricitÃ©
+# ? Dakar Power Prediction - Prédiction des Coupures d'Électricité
 
-Application web de prÃ©diction des risques de coupures d'Ã©lectricitÃ© dans **8 quartiers de Dakar** utilisant le **Machine Learning** et le **Deep Learning**.
+Application web de prédiction des risques de coupures d'électricité dans **8 quartiers de Dakar** utilisant le **Machine Learning** et le **Deep Learning**.
 
-## ğŸ¯ Objectif
+## ?? Objectif
 
-Anticiper les coupures d'Ã©lectricitÃ© pour permettre aux gestionnaires de rÃ©seaux et aux citoyens de mieux planifier leurs activitÃ©s.
+Anticiper les coupures d'électricité pour permettre aux gestionnaires de réseaux et aux citoyens de mieux planifier leurs activités.
 
-## âœ¨ FonctionnalitÃ©s
+## ? Fonctionnalités
 
-### ğŸ”® PrÃ©diction en Temps RÃ©el
-- Analyse basÃ©e sur conditions mÃ©tÃ©o (tempÃ©rature, humiditÃ©, vent)
-- Calcul du niveau de risque (FAIBLE 0-39%, MOYEN 40-69%, Ã‰LEVÃ‰ 70-100%)
+### ?? Prédiction en Temps Réel
+- Analyse basée sur conditions météo (température, humidité, vent)
+- Calcul du niveau de risque (FAIBLE 0-39%, MOYEN 40-69%, ÉLEVÉ 70-100%)
 - Visualisation avec jauge interactive
 
-### ğŸ—ºï¸ Carte Interactive
-- Visualisation gÃ©ographique des 8 quartiers de Dakar
-- PrÃ©dictions simultanÃ©es pour toutes les zones
+### ??? Carte Interactive
+- Visualisation géographique des 8 quartiers de Dakar
+- Prédictions simultanées pour toutes les zones
 - Interface Plotly interactive
 
-### ğŸ“Š Analytics
+### ?? Analytics
 - Statistiques par quartier
 - Graphiques de taux de coupure
 - Analyse comparative des zones
 
-### ğŸ“ˆ Historique et Tendances
-- Ã‰volution temporelle de la consommation
+### ?? Historique et Tendances
+- Évolution temporelle de la consommation
 - Tendances des risques de coupure
 - Filtrage par quartier
 
-### ğŸ’¾ Export
-- TÃ©lÃ©chargement des prÃ©dictions en CSV
+### ?? Export
+- Téléchargement des prédictions en CSV
 - Historique complet des analyses
 
-## ğŸ¤– ModÃ¨les de Machine Learning
+## ?? Modèles de Machine Learning
 
-### Ensemble de 2 ModÃ¨les
-- **LightGBM** (Gradient Boosting) : ~88% de prÃ©cision
-- **LSTM** (Deep Learning) : ~90% de prÃ©cision
-- **Combinaison pondÃ©rÃ©e** : Risque final en pourcentage
+### Ensemble de 2 Modèles
+- **LightGBM** (Gradient Boosting) : ~88% de précision
+- **LSTM** (Deep Learning) : ~90% de précision
+- **Combinaison pondérée** : Risque final en pourcentage
 
 ### Dataset
-- **70,001 enregistrements** de donnÃ©es synthÃ©tiques
-- **8 quartiers** : Dakar-Plateau, GuÃ©diawaye, Pikine, Parcelles Assainies, Grand-Yoff, Ouakam, MÃ©dina, Almadies
+- **70,001 enregistrements** de données synthétiques
+- **8 quartiers** : Dakar-Plateau, Guédiawaye, Pikine, Parcelles Assainies, Grand-Yoff, Ouakam, Médina, Almadies
 
-## ğŸ› ï¸ Technologies
+## ??? Technologies
 
 - **Backend** : Python, Pandas, NumPy
 - **ML/DL** : LightGBM, TensorFlow/Keras, Scikit-learn
 - **Frontend** : Streamlit
 - **Visualisation** : Plotly
-- **ModÃ¨les** : 3 fichiers (lgbm_model.pkl, lstm_model.keras, scaler.pkl)
+- **Modèles** : 3 fichiers (lgbm_model.pkl, lstm_model.keras, scaler.pkl)
 
-## ğŸ‘¨â€ğŸ’» Auteur
+## ????? Auteur
 
 **Cheikh Niang** - Data Scientist Junior
-- ğŸŒ Portfolio : [portfolio-cheikh-niang.streamlit.app](https://portfolio-cheikh-niang.streamlit.app)
-- ğŸ’¼ LinkedIn : [linkedin.com/in/cheikh-niang](https://linkedin.com/in/cheikh-niang)
-- ğŸ“§ Email : cheikhniang159@gmail.com
+- ?? Portfolio : [portfolio-cheikh-niang.streamlit.app](https://portfolio-cheikh-niang.streamlit.app)
+- ?? LinkedIn : [linkedin.com/in/cheikh-niang](https://linkedin.com/in/cheikh-niang)
+- ?? Email : cheikhniang159@gmail.com
 
-## ğŸ“„ Licence
+## ?? Licence
 
 Projet sous licence MIT.
