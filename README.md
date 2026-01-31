@@ -146,9 +146,8 @@ streamlit run streamlit_app/app.py
 Passionné par l'application du ML à des problèmes sociétaux réels en Afrique.
 
 📧 cheikhniang159@gmail.com  
-💼 [LinkedIn](https://linkedin.com/in/cheikh-niang)  
-🌐 [Portfolio](https://portfolio-cheikh-niang.streamlit.app)
-
+💼 [LinkedIn](https://www.linkedin.com/in/cheikh-niang-5370091b5/)
+🌐 [Portfolio](https://portfolio-cheikh-niang.vercel.app/)
 ---
 
 ## 📄 LICENCE
