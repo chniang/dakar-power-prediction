@@ -12,7 +12,8 @@ import numpy as np
 import plotly.graph_objects as go
 from tensorflow import keras
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings('ignore', category=UserWarning, module='keras')
+warnings.filterwarnings('ignore', category=UserWarning, module='lightgbm')
 
 from src.config import QUARTIERS_DAKAR, COORDONNEES_QUARTIERS, QUARTIER_ADJUSTMENT
 
@@ -68,7 +69,8 @@ def make_prediction_single(models, quartier, temp, humidite, vent, conso, time_f
             try:
                 features_lstm = features_scaled.reshape(1, 1, -1)
                 pred_lstm = float(lstm_model.predict(features_lstm, verbose=0)[0][0]) * 100
-            except:
+            except Exception as e:
+                logger.warning(f"LSTM prediction failed, falling back to LightGBM: {e}")
                 pred_lstm = pred_lgb
         else:
             pred_lstm = pred_lgb
@@ -210,7 +212,8 @@ def create_temporal_chart(df_hist, quartier_filter):
             hovermode='x unified', height=500
         )
         return fig
-    except:
+    except Exception as e:
+        logger.warning(f"create_temporal_chart failed: {e}")
         return None
 
 def create_risk_trend_chart(df_hist, quartier_filter):
@@ -250,6 +253,7 @@ def create_risk_trend_chart(df_hist, quartier_filter):
         title = f"Tendance - {quartier_filter}" if quartier_filter != "Tous" else "Tendance"
         fig.update_layout(title=title, xaxis_title="Date", yaxis_title="Taux (%)", height=500)
         return fig
-    except:
+    except Exception as e:
+        logger.warning(f"create_risk_trend_chart failed: {e}")
         return None
 

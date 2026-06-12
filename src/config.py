@@ -74,6 +74,11 @@ SEUILS_RISQUE = {
     'eleve': 70
 }
 
+def classify_risk(score: float) -> str:
+    if score < 40: return "FAIBLE"
+    elif score < 70: return "MOYEN"
+    return "ÉLEVÉ"
+
 # ============================================================================
 # PLAGES DE TEMPÉRATURE PAR SAISON
 # ============================================================================

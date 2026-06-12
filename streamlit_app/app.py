@@ -1,13 +1,25 @@
-﻿import streamlit as st
+﻿import logging
+import streamlit as st
 import pandas as pd
 from datetime import datetime
 from pathlib import Path
 import sys
 
+logger = logging.getLogger(__name__)
+
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from streamlit_app.utils_simple import *
+from streamlit_app.utils_simple import (
+    load_models_cached,
+    create_time_features,
+    make_prediction_single,
+    create_gauge_chart,
+    create_map,
+    create_bar_chart_quartiers,
+    create_temporal_chart,
+    create_risk_trend_chart,
+)
 from src.config import QUARTIERS_DAKAR
 
 st.set_page_config(page_title="Dakar Power", page_icon="⚡", layout="wide")
@@ -24,7 +36,8 @@ models = load_models_cached()
 def load_csv():
     try:
         return pd.read_csv("data/synthetic/synthetic_data_v2.csv")
-    except:
+    except Exception as e:
+        logger.error(f"Failed to load CSV: {e}")
         return None
 
 df_hist = load_csv()
