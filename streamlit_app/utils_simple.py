@@ -15,7 +15,7 @@ from tensorflow import keras
 warnings.filterwarnings('ignore', category=UserWarning, module='keras')
 warnings.filterwarnings('ignore', category=UserWarning, module='lightgbm')
 
-from src.config import QUARTIERS_DAKAR, COORDONNEES_QUARTIERS, QUARTIER_ADJUSTMENT
+from src.config import QUARTIERS_DAKAR, COORDONNEES_QUARTIERS, QUARTIER_ADJUSTMENT, classify_risk
 
 logger = logging.getLogger(__name__)
 
@@ -95,8 +95,8 @@ def get_risk_color(risque_pct):
 
 def create_gauge_chart(risque, quartier):
     color = get_risk_color(risque)
-    niveau = "FAIBLE" if risque < 40 else ("MOYEN" if risque < 70 else "ÉLEVÉ")
-    
+    niveau = classify_risk(risque)
+
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=risque,
@@ -129,7 +129,7 @@ def create_map(results):
         if quartier in COORDONNEES_QUARTIERS:
             coords = COORDONNEES_QUARTIERS[quartier]
             r = result['Risque']
-            niveau = "FAIBLE" if r < 40 else ("MOYEN" if r < 70 else "ÉLEVÉ")
+            niveau = classify_risk(r)
             df_map.append({
                 'Quartier': quartier, 'Latitude': coords['lat'], 'Longitude': coords['lon'],
                 'Risque': r, 'Niveau': niveau
@@ -160,7 +160,7 @@ def create_bar_chart_quartiers(df_stats):
     df_sorted = df_stats.sort_values('taux_coupure', ascending=False)
     risques_pct = (df_sorted['taux_coupure'] * 100).tolist()
     colors = [get_risk_color(r) for r in risques_pct]
-    niveaux = ["FAIBLE" if r < 40 else ("MOYEN" if r < 70 else "ÉLEVÉ") for r in risques_pct]
+    niveaux = [classify_risk(r) for r in risques_pct]
     
     fig = go.Figure()
     fig.add_trace(go.Bar(
@@ -236,7 +236,7 @@ def create_risk_trend_chart(df_hist, quartier_filter):
         df_daily = df.groupby(df[date_col].dt.date).agg({'coupure': ['sum', 'count']}).reset_index()
         df_daily.columns = ['date', 'coupures', 'total']
         df_daily['taux'] = (df_daily['coupures'] / df_daily['total'] * 100)
-        df_daily['niveau'] = df_daily['taux'].apply(lambda t: "FAIBLE" if t < 40 else ("MOYEN" if t < 70 else "ÉLEVÉ"))
+        df_daily['niveau'] = df_daily['taux'].apply(classify_risk)
         df_daily['couleur'] = df_daily['taux'].apply(get_risk_color)
         
         fig = go.Figure()

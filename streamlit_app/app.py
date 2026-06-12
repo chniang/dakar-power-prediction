@@ -21,7 +21,7 @@ from streamlit_app.utils_simple import (
     create_temporal_chart,
     create_risk_trend_chart,
 )
-from src.config import QUARTIERS_DAKAR, QUARTIER_ADJUSTMENT
+from src.config import QUARTIERS_DAKAR, QUARTIER_ADJUSTMENT, classify_risk
 
 st.set_page_config(page_title="Dakar Power", page_icon="⚡", layout="wide")
 
@@ -96,7 +96,7 @@ with tab1:
         
         if result:
             pred_lgb, pred_lstm, risque = result
-            niveau = "FAIBLE" if risque < 40 else ("MOYEN" if risque < 70 else "ÉLEVÉ")
+            niveau = classify_risk(risque)
             
             if 'predictions_history' not in st.session_state:
                 st.session_state['predictions_history'] = []
@@ -179,7 +179,7 @@ with tab2:
             fig = create_map(results)
             st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
             df_res = pd.DataFrame(results).sort_values('Risque', ascending=False)
-            df_res['Niveau'] = df_res['Risque'].apply(lambda r: "ÉLEVÉ" if r >= 70 else ("MOYEN" if r >= 40 else "FAIBLE"))
+            df_res['Niveau'] = df_res['Risque'].apply(classify_risk)
             df_res['Risque'] = df_res['Risque'].apply(lambda x: f"{x:.1f}%")
             st.dataframe(df_res, use_container_width=True, hide_index=True)
 
