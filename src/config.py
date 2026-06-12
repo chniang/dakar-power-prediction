@@ -26,12 +26,12 @@ SUPABASE_CONFIG = {
 QUARTIERS_DAKAR = [
     'Guediawaye',
     'Parcelles Assainies',
-    'Pikine',
-    'Sicap-Liberte',
+    'Pikine',            # ATTENTION : absent des données d'entraînement (data_generator.py)
+    'Sicap-Liberté',
     'Yoff',
-    'Mermoz-Sacre-Coeur',
+    'Mermoz-Sacré-Cœur',
     'Dakar-Plateau',
-    'Fann'
+    'Fann'              # ATTENTION : absent des données d'entraînement (data_generator.py)
 ]
 
 # ============================================================================
@@ -42,9 +42,9 @@ COORDONNEES_QUARTIERS = {
     'Guediawaye': {'lat': 14.7692, 'lon': -17.4008},
     'Parcelles Assainies': {'lat': 14.7586, 'lon': -17.4147},
     'Pikine': {'lat': 14.7564, 'lon': -17.3924},
-    'Sicap-Liberte': {'lat': 14.7167, 'lon': -17.4677},
+    'Sicap-Liberté': {'lat': 14.7167, 'lon': -17.4677},
     'Yoff': {'lat': 14.7539, 'lon': -17.4894},
-    'Mermoz-Sacre-Coeur': {'lat': 14.7206, 'lon': -17.4706},
+    'Mermoz-Sacré-Cœur': {'lat': 14.7206, 'lon': -17.4706},
     'Dakar-Plateau': {'lat': 14.6928, 'lon': -17.4467},
     'Fann': {'lat': 14.6937, 'lon': -17.4531}
 }
@@ -56,12 +56,12 @@ COORDONNEES_QUARTIERS = {
 QUARTIER_ADJUSTMENT = {
     'Guediawaye': 1.15,
     'Parcelles Assainies': 1.10,
-    'Pikine': 1.20,
-    'Sicap-Liberte': 1.05,
+    'Pikine': 1.20,             # ATTENTION : absent des données d'entraînement
+    'Sicap-Liberté': 1.05,
     'Yoff': 1.00,
-    'Mermoz-Sacre-Coeur': 0.90,
+    'Mermoz-Sacré-Cœur': 0.90,
     'Dakar-Plateau': 0.85,
-    'Fann': 0.95
+    'Fann': 0.95                # ATTENTION : absent des données d'entraînement
 }
 
 # ============================================================================
@@ -116,4 +116,3 @@ MODEL_CONFIG = {
     'random_state': 42
 }
 
-print("✅ Config chargée : 8 quartiers")

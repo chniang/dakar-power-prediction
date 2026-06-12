@@ -1,16 +1,22 @@
 ﻿"""
 Fonctions utilitaires - THÈME PAR DÉFAUT STREAMLIT/PLOTLY
 """
-import streamlit as st
+import logging
 import warnings
-warnings.filterwarnings('ignore')
+import pickle
+from datetime import datetime
+
+import streamlit as st
 import pandas as pd
 import numpy as np
-from datetime import datetime
-import pickle
 import plotly.graph_objects as go
 from tensorflow import keras
+
+warnings.filterwarnings('ignore')
+
 from src.config import QUARTIERS_DAKAR, COORDONNEES_QUARTIERS, QUARTIER_ADJUSTMENT
+
+logger = logging.getLogger(__name__)
 
 @st.cache_resource
 def load_models_cached():
@@ -37,14 +43,9 @@ def load_models_cached():
 
 def create_time_features(date_time):
     month = date_time.month
-    if month in [12, 1, 2]:
-        saison = 1
-    elif month in [3, 4, 5]:
-        saison = 2
-    elif month in [6, 7, 8]:
-        saison = 3
-    else:
-        saison = 4
+    # Encodage binaire calé sur synthetic_data_v2.csv : saison pluies (Jun-Août) = 1, reste = 0
+    saison = 1 if month in [6, 7, 8] else 0
+    # is_peak_hour calé sur le CSV : heures 18-22 = 1 (soir uniquement)
     is_peak_hour = 1 if 18 <= date_time.hour <= 22 else 0
     return {'hour': date_time.hour, 'day_of_week': date_time.weekday(), 'month': date_time.month, 'saison': saison, 'is_peak_hour': is_peak_hour}
 
@@ -60,11 +61,9 @@ def make_prediction_single(models, quartier, temp, humidite, vent, conso, time_f
         features_scaled = scaler.transform(features_array)
         try:
             pred_lgb = float(lgb_model.predict(features_scaled)[0]) * 100
-        except:
-            try:
-                pred_lgb = lgb_model.predict_proba(features_scaled)[0][1] * 100
-            except:
-                pred_lgb = 50.0
+        except Exception as e:
+            logger.error(f"LightGBM prediction failed: {e}")
+            pred_lgb = 50.0
         if lstm_model is not None:
             try:
                 features_lstm = features_scaled.reshape(1, 1, -1)
