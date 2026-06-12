@@ -59,43 +59,40 @@ error_count = 0
 for i in range(0, len(df), batch_size):
     batch_num = i // batch_size + 1
     batch = df[i:i + batch_size]
-    
-    # Préparer les données
-    records = []
-    for _, row in batch.iterrows():
-        records.append({
-            'date_heure': row['date'],
-            'quartier': row['quartier'],
-            'temp_celsius': float(row['temp_celsius']),
-            'humidite_percent': int(row['humidite_percent']),
-            'vitesse_vent': float(row['vitesse_vent']),
-            'conso_megawatt': int(row['conso_megawatt']),
-            'prediction': int(row['coupure'])
-        })
-    
+
+    # Préparer les données via rename + to_dict (pas d'iterrows)
+    records = (
+        batch.rename(columns={'date': 'date_heure', 'coupure': 'prediction'})
+        [['date_heure', 'quartier', 'temp_celsius', 'humidite_percent',
+          'vitesse_vent', 'conso_megawatt', 'prediction']]
+        .astype({'temp_celsius': float, 'humidite_percent': int,
+                 'vitesse_vent': float, 'conso_megawatt': int, 'prediction': int})
+        .to_dict('records')
+    )
+
     # Envoyer à Supabase
     try:
         response = requests.post(
             f"{url}/rest/v1/enregistrements",
             headers=headers,
-            json=records
+            json=records,
+            timeout=30
         )
-        
+
         if response.status_code in [200, 201]:
             success_count += len(records)
             print(f"  ✅ Batch {batch_num}/{total_batches} : {len(records)} lignes")
         else:
             error_count += len(records)
             print(f"  ❌ Batch {batch_num}/{total_batches} : Erreur {response.status_code}")
-            if batch_num == 1:  # Afficher détails pour première erreur
+            if batch_num == 1:
                 print(f"     {response.text[:200]}")
-        
-        # Pause pour éviter rate limit
-        time.sleep(0.5)
-        
+            time.sleep(min(2 ** (error_count // batch_size), 30))  # backoff sur erreur uniquement
+
     except Exception as e:
         error_count += len(records)
         print(f"  ❌ Batch {batch_num}/{total_batches} : {e}")
+        time.sleep(2)
 
 print("\n" + "=" * 70)
 print("📊 RÉSUMÉ")

@@ -310,74 +310,98 @@ def generate_dataset(
     """
     if quartiers is None:
         quartiers = list(QUARTIERS_CONFIG.keys())
-    
+
     print("=" * 70)
-    print(" 🔄 GÉNÉRATION DES DONNÉES SYNTHÉTIQUES")
+    print(" 🔄 GÉNÉRATION DES DONNÉES SYNTHÉTIQUES (vectorisée)")
     print("=" * 70)
     print(f"📅 Période : {start_date} → {end_date}")
     print(f"🏘️  Quartiers : {len(quartiers)}")
-    
-    # Générer les dates
+
     dates = generate_date_range(start_date, end_date, freq='1H')
-    print(f"⏰ Timestamps : {len(dates):,}")
-    
-    data = []
-    
+    n = len(dates)
+    print(f"⏰ Timestamps : {n:,}")
+
+    # Composantes temporelles extraites une seule fois pour tous les quartiers
+    hours        = dates.hour.values
+    months       = dates.month.values
+    days_of_week = dates.dayofweek.values
+
+    # Saison vectorielle — identique à get_season()
+    seasons = np.where(np.isin(months, [11, 12, 1, 2]), 0,
+              np.where(np.isin(months, [3, 4, 5]),      1, 2))
+
+    # Heure de pointe vectorielle — identique à is_peak_hour()
+    is_peak = ((hours >= 7) & (hours <= 9)) | ((hours >= 18) & (hours <= 21))
+
+    frames = []
     for quartier in quartiers:
         print(f"\n📍 Génération pour {quartier}...")
-        config = QUARTIERS_CONFIG[quartier]
-        
-        for date in dates:
-            hour = date.hour
-            month = date.month
-            day_of_week = date.dayofweek
-            season = get_season(month)
-            is_peak = is_peak_hour(hour)
-            
-            # Générer les features
-            temp = generate_temperature(month, hour, config)
-            humidity = generate_humidity(temp, season)
-            wind = generate_wind_speed(season, is_peak)
-            consumption = generate_consumption(hour, is_peak, config, temp)
-            
-            # Calculer probabilité de coupure
-            proba = calculate_outage_probability(
-                temp, humidity, wind, consumption, is_peak, config, season
-            )
-            
-            # Déterminer s'il y a coupure
-            coupure = 1 if np.random.random() < proba else 0
-            
-            data.append({
-                'date_heure': date,
-                'quartier': quartier,
-                'temp_celsius': round(temp, 2),
-                'humidite_percent': humidity,
-                'vitesse_vent': round(wind, 2),
-                'conso_megawatt': consumption,
-                'heure': hour,
-                'jour_semaine': day_of_week,
-                'mois': month,
-                'saison': season,
-                'is_peak_hour': int(is_peak),
-                'coupure': coupure
-            })
-    
-    df = pd.DataFrame(data)
-    
+        cfg = QUARTIERS_CONFIG[quartier]
+
+        # Température (vectorise generate_temperature)
+        season_base = np.where(seasons == 0, 24.0, np.where(seasons == 1, 30.0, 27.0))
+        hour_effect = 5 * np.sin((hours - 6) * np.pi / 12)
+        temp = np.round(np.clip(
+            season_base + hour_effect + cfg['temperature_bias'] + np.random.normal(0, 2, n),
+            18, 42
+        ), 2)
+
+        # Humidité (vectorise generate_humidity)
+        hum_season_adj = np.where(seasons == 2, 15, np.where(seasons == 1, -10, 0))
+        humidity = np.clip(
+            100 - (temp - 20) * 1.5 + hum_season_adj + np.random.normal(0, 8, n),
+            30, 95
+        ).astype(int)
+
+        # Vent (vectorise generate_wind_speed)
+        wind_base = np.where(seasons == 2, 20.0, 12.0) + np.where(is_peak, 5.0, 0.0)
+        wind = np.round(np.clip(wind_base + np.random.normal(0, 5, n), 0, 50), 2)
+
+        # Consommation (vectorise generate_consumption)
+        hour_factor = np.where(is_peak, 1.3, np.where((hours >= 22) | (hours <= 5), 0.7, 1.0))
+        temp_factor = np.where(temp > 32, 1 + (temp - 32) * 0.03, 1.0)
+        consumption = np.clip(
+            cfg['consommation_avg'] * hour_factor * temp_factor + np.random.normal(0, 50, n),
+            200, 1500
+        ).astype(int)
+
+        # Probabilité de coupure (vectorise calculate_outage_probability)
+        temp_risk   = np.where(temp < 30, 0.0, (temp - 30) * 0.02)
+        conso_risk  = np.where(consumption < 900, 0.0, (consumption - 900) * 0.0001)
+        peak_risk   = np.where(is_peak, 0.03, 0.0)
+        season_risk = np.where(seasons == 1, 0.02, 0.0)
+        proba = np.clip(cfg['risque_base'] + temp_risk + conso_risk + peak_risk + season_risk, 0, 1)
+        coupure = (np.random.random(n) < proba).astype(int)
+
+        frames.append(pd.DataFrame({
+            'date_heure':      dates,
+            'quartier':        quartier,
+            'temp_celsius':    temp,
+            'humidite_percent': humidity,
+            'vitesse_vent':    wind,
+            'conso_megawatt':  consumption,
+            'heure':           hours,
+            'jour_semaine':    days_of_week,
+            'mois':            months,
+            'saison':          seasons,
+            'is_peak_hour':    is_peak.astype(int),
+            'coupure':         coupure,
+        }))
+
+    df = pd.concat(frames, ignore_index=True)
+
     print("\n" + "=" * 70)
     print(" ✅ GÉNÉRATION TERMINÉE")
     print("=" * 70)
     print(f"📊 Total lignes : {len(df):,}")
     print(f"🔴 Coupures : {df['coupure'].sum():,} ({df['coupure'].mean()*100:.2f}%)")
     print(f"🟢 Pas de coupure : {(~df['coupure'].astype(bool)).sum():,}")
-    
-    # Taux par quartier
+
     print("\n📊 Taux de coupure par quartier :")
     for quartier in quartiers:
         taux = df[df['quartier'] == quartier]['coupure'].mean() * 100
         print(f"  {quartier:25s} : {taux:6.2f}%")
-    
+
     return df
 
 

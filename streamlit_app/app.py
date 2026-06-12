@@ -1,6 +1,7 @@
 ﻿import logging
 import streamlit as st
 import pandas as pd
+import numpy as np
 from datetime import datetime
 from pathlib import Path
 import sys
@@ -20,7 +21,7 @@ from streamlit_app.utils_simple import (
     create_temporal_chart,
     create_risk_trend_chart,
 )
-from src.config import QUARTIERS_DAKAR
+from src.config import QUARTIERS_DAKAR, QUARTIER_ADJUSTMENT
 
 st.set_page_config(page_title="Dakar Power", page_icon="⚡", layout="wide")
 
@@ -139,14 +140,41 @@ with tab2:
     st.header("🗺️ Carte Interactive")
     if st.button("🔄 Calculer pour tous les quartiers"):
         time_features = create_time_features(datetime.now())
+        lgb_model = models['lgb']
+        lstm_model = models['lstm']
+        scaler = models['scaler']
+
         results = []
-        progress = st.progress(0)
-        for i, q in enumerate(QUARTIERS_DAKAR):
-            result = make_prediction_single(models, q, temperature, humidite, vitesse_vent, consommation, time_features)
-            if result:
-                results.append({'Quartier': q, 'Risque': result[2]})
-            progress.progress((i + 1) / len(QUARTIERS_DAKAR))
-        progress.empty()
+        if lgb_model is None or scaler is None:
+            st.error("Modèles non chargés — impossible de calculer la carte.")
+        else:
+            # Matrice 8×9 : une ligne par quartier, mêmes features météo pour tous
+            feature_row = [
+                temperature, humidite, vitesse_vent, consommation,
+                time_features['hour'], time_features['day_of_week'],
+                time_features['month'], time_features['saison'],
+                time_features['is_peak_hour'],
+            ]
+            X = np.tile(feature_row, (len(QUARTIERS_DAKAR), 1))   # (8, 9)
+            X_scaled = scaler.transform(X)                         # une seule passe
+
+            preds_lgb = lgb_model.predict(X_scaled) * 100         # (8,) en un appel
+
+            if lstm_model is not None:
+                X_lstm = X_scaled.reshape(len(QUARTIERS_DAKAR), 1, -1)  # (8, 1, 9)
+                preds_lstm = lstm_model.predict(X_lstm, verbose=0).flatten() * 100
+            else:
+                preds_lstm = preds_lgb.copy()
+
+            risque_base = (preds_lgb + preds_lstm) / 2
+
+            results = [
+                {
+                    'Quartier': q,
+                    'Risque': float(np.clip(risque_base[i] * QUARTIER_ADJUSTMENT.get(q, 1.0), 0, 100)),
+                }
+                for i, q in enumerate(QUARTIERS_DAKAR)
+            ]
         if results:
             fig = create_map(results)
             st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
