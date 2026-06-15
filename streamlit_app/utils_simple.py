@@ -10,7 +10,13 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from tensorflow import keras
+
+try:
+    from tensorflow import keras
+    _KERAS_AVAILABLE = True
+except ImportError:
+    keras = None
+    _KERAS_AVAILABLE = False
 
 warnings.filterwarnings('ignore', category=UserWarning, module='keras')
 warnings.filterwarnings('ignore', category=UserWarning, module='lightgbm')
@@ -27,14 +33,18 @@ def load_models_cached():
             models['lgb'] = pickle.load(f)
     except Exception as e:
         st.warning(f"⚠️ LightGBM: {e}")
-    try:
-        # Charger LSTM avec compile=False pour éviter les erreurs de compatibilité
-        models['lstm'] = keras.models.load_model('models/lstm_model.keras', compile=False)
-        # Compiler manuellement avec les bons paramètres
-        models['lstm'].compile(optimizer='adam', loss='binary_crossentropy')
-    except Exception:
-        # Si LSTM échoue, utiliser seulement LightGBM (pas d'avertissement affiché)
+    if not _KERAS_AVAILABLE:
+        logger.warning("TensorFlow non disponible — LSTM désactivé, LightGBM seul utilisé.")
         models['lstm'] = None
+    else:
+        try:
+            # Charger LSTM avec compile=False pour éviter les erreurs de compatibilité
+            models['lstm'] = keras.models.load_model('models/lstm_model.keras', compile=False)
+            # Compiler manuellement avec les bons paramètres
+            models['lstm'].compile(optimizer='adam', loss='binary_crossentropy')
+        except Exception:
+            # Si LSTM échoue, utiliser seulement LightGBM (pas d'avertissement affiché)
+            models['lstm'] = None
     try:
         with open('models/scaler.pkl', 'rb') as f:
             models['scaler'] = pickle.load(f)

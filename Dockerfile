@@ -6,15 +6,15 @@ RUN apt-get update && apt-get install -y libgomp1 && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # Copier les fichiers n�cessaires
-COPY requirements.txt .
+COPY requirements-hf.txt .
 COPY streamlit_app ./streamlit_app
 COPY models ./models
 COPY data ./data
 COPY src ./src
 COPY .streamlit ./.streamlit
 
-# Installer les d�pendances
-RUN pip install --no-cache-dir -r requirements.txt
+# Installer les dependances (sans TensorFlow pour eviter le timeout HF)
+RUN pip install --no-cache-dir -r requirements-hf.txt
 
 # Exposer le port
 EXPOSE 8501
