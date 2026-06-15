@@ -1,11 +1,11 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # Installer libgomp1 pour LightGBM
 RUN apt-get update && apt-get install -y libgomp1 && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copier les fichiers nécessaires
+# Copier les fichiers nï¿½cessaires
 COPY requirements.txt .
 COPY streamlit_app ./streamlit_app
 COPY models ./models
@@ -13,7 +13,7 @@ COPY data ./data
 COPY src ./src
 COPY .streamlit ./.streamlit
 
-# Installer les dépendances
+# Installer les dï¿½pendances
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Exposer le port
