@@ -17,7 +17,7 @@ COPY .streamlit ./.streamlit
 RUN pip install --no-cache-dir -r requirements-hf.txt
 
 # Exposer le port
-EXPOSE 8501
+EXPOSE 7860
 
 # Lancer l'application
-CMD ["streamlit", "run", "streamlit_app/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "streamlit_app/app.py", "--server.port=7860", "--server.address=0.0.0.0"]
