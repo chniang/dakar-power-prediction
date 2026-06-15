@@ -199,28 +199,33 @@ def create_temporal_chart(df_hist, quartier_filter):
         if date_col is None:
             df['index_date'] = pd.date_range(start='2023-01-01', periods=len(df), freq='H')
             date_col = 'index_date'
-        df[date_col] = pd.to_datetime(df[date_col])
+        df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
         df = df.sort_values(date_col)
         if quartier_filter != "Tous" and 'quartier' in df.columns:
             df = df[df['quartier'] == quartier_filter]
-        df_sample = df.sample(min(1000, len(df))).sort_values(date_col)
-        
+        df_agg = (
+            df.set_index(date_col)
+            .resample('W')[['conso_megawatt', 'temp_celsius']]
+            .mean()
+            .reset_index()
+        )
+
         fig = go.Figure()
-        if 'conso_megawatt' in df_sample.columns:
+        if 'conso_megawatt' in df_agg.columns:
             fig.add_trace(go.Scatter(
-                x=df_sample[date_col], y=df_sample['conso_megawatt'],
+                x=df_agg[date_col], y=df_agg['conso_megawatt'],
                 mode='lines', name='Consommation', line=dict(color='#00bcd4', width=1.5),
                 fill='tozeroy', hovertemplate='<b>Conso</b><br>%{y:.0f} MW<extra></extra>'
             ))
-        if 'temp_celsius' in df_sample.columns:
+        if 'temp_celsius' in df_agg.columns:
             fig.add_trace(go.Scatter(
-                x=df_sample[date_col], y=df_sample['temp_celsius'],
+                x=df_agg[date_col], y=df_agg['temp_celsius'],
                 mode='lines', name='Température', line=dict(color='#ff5722', width=1.5, dash='dot'),
                 yaxis='y2', hovertemplate='<b>Temp</b><br>%{y:.1f}°C<extra></extra>'
             ))
-        title = f"Évolution - {quartier_filter}" if quartier_filter != "Tous" else "Évolution Historique"
+        title = f"Évolution Hebdomadaire — Consommation & Température ({quartier_filter})" if quartier_filter != "Tous" else "Évolution Hebdomadaire — Consommation & Température"
         fig.update_layout(
-            title=title, xaxis_title="Date",
+            title=title, xaxis_title="Semaine",
             yaxis=dict(title="Consommation (MW)"),
             yaxis2=dict(title="Température (°C)", overlaying='y', side='right'),
             hovermode='x unified', height=500

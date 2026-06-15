@@ -252,6 +252,7 @@ with tab3:
                 height=350, margin=dict(t=10),
             )
             st.plotly_chart(fig_h, use_container_width=True)
+            st.caption("⚡ Le pic 18-22h correspond aux heures de pointe du réseau SENELEC (données historiques)")
         with col2:
             st.subheader("📅 Risque par Mois")
             by_month = df_hist.groupby('mois')['coupure'].mean() * 100
@@ -264,6 +265,7 @@ with tab3:
             ))
             fig_m.update_layout(xaxis_title="Mois", yaxis_title="Taux (%)", height=350, margin=dict(t=10))
             st.plotly_chart(fig_m, use_container_width=True)
+            st.caption("ℹ️ Dataset synthétique 2023-2024 : les pics de Déc/Fév reflètent la distribution des données d'entraînement, pas nécessairement la saisonnalité réelle.")
 
 with tab4:
     st.header("📈 Historique")
