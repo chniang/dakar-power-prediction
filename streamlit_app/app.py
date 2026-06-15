@@ -22,6 +22,7 @@ from streamlit_app.utils_simple import (
     create_risk_trend_chart,
 )
 from src.config import QUARTIERS_DAKAR, QUARTIER_ADJUSTMENT, classify_risk
+from src.weather_api import get_current_weather_dakar
 
 st.set_page_config(page_title="Dakar Power", page_icon="⚡", layout="wide")
 
@@ -44,10 +45,24 @@ def load_csv():
 df_hist = load_csv()
 
 st.sidebar.title("🌡️ Paramètres")
-temperature = st.sidebar.slider("Température (°C)", 15.0, 45.0, 25.0, 0.5)
-humidite = st.sidebar.slider("Humidité (%)", 30.0, 100.0, 65.0, 1.0)
-vitesse_vent = st.sidebar.slider("Vent (km/h)", 0.0, 50.0, 15.0, 1.0)
-consommation = st.sidebar.slider("Consommation (MW)", 400.0, 1500.0, 800.0, 10.0)
+
+if st.sidebar.button("🌤️ Météo actuelle Dakar", use_container_width=True):
+    weather = get_current_weather_dakar()
+    if weather:
+        st.session_state['s_temp']  = float(np.clip(weather['temperature'], 15.0, 45.0))
+        st.session_state['s_hum']   = float(np.clip(weather['humidity'],    30.0, 100.0))
+        st.session_state['s_wind']  = float(np.clip(weather['wind_speed'],  0.0,  50.0))
+        st.session_state['wx_time'] = weather['timestamp']
+    else:
+        st.sidebar.error("❌ API météo indisponible")
+
+if 'wx_time' in st.session_state:
+    st.sidebar.caption(f"⏱️ Données météo en temps réel — {st.session_state['wx_time']}")
+
+temperature  = st.sidebar.slider("Température (°C)",   15.0,  45.0,  25.0,  0.5,  key='s_temp')
+humidite     = st.sidebar.slider("Humidité (%)",        30.0, 100.0,  65.0,  1.0,  key='s_hum')
+vitesse_vent = st.sidebar.slider("Vent (km/h)",          0.0,  50.0,  15.0,  1.0,  key='s_wind')
+consommation = st.sidebar.slider("Consommation (MW)",  400.0, 1500.0, 800.0, 10.0)
 quartier = st.sidebar.selectbox("Quartier", QUARTIERS_DAKAR, index=0)
 
 if st.sidebar.button("🔮 Lancer la Prédiction", type="primary", use_container_width=True):

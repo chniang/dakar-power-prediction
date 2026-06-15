@@ -97,11 +97,11 @@ def make_prediction_single(models, quartier, temp, humidite, vent, conso, time_f
 
 def get_risk_color(risque_pct):
     if risque_pct < 40:
-        return "#28a745"
+        return "#2ecc71"
     elif risque_pct < 70:
-        return "#ffc107"
+        return "#f39c12"
     else:
-        return "#dc3545"
+        return "#e74c3c"
 
 def create_gauge_chart(risque, quartier):
     color = get_risk_color(risque)
@@ -146,21 +146,25 @@ def create_map(results):
             })
     df_map = pd.DataFrame(df_map)
     df_map['Couleur'] = df_map['Risque'].apply(get_risk_color)
-    df_map['Taille'] = 10 + (df_map['Risque'] / 100) * 40
-    
+    df_map['Taille'] = 20 + (df_map['Risque'] / 100) * 30
+
     fig = go.Figure()
     fig.add_trace(go.Scattermapbox(
         lat=df_map['Latitude'], lon=df_map['Longitude'], mode='markers',
-        marker=dict(size=df_map['Taille'], color=df_map['Couleur'], opacity=0.8),
+        marker=dict(size=df_map['Taille'], color=df_map['Couleur'], opacity=0.85),
         text=df_map['Quartier'],
         customdata=df_map[['Risque', 'Niveau']],
-        hovertemplate='<b>%{text}</b><br>Risque: %{customdata[0]:.1f}%<br>Niveau: %{customdata[1]}<extra></extra>'
+        hovertemplate=(
+            '<b>%{text}</b><br>'
+            'Risque : %{customdata[0]:.1f}%<br>'
+            'Niveau : %{customdata[1]}<extra></extra>'
+        ),
     ))
     fig.update_layout(
-        mapbox=dict(style="open-street-map", center=dict(lat=14.7167, lon=-17.4677), zoom=10),
-        title="Carte des Risques",
+        mapbox=dict(style="open-street-map", center=dict(lat=14.72, lon=-17.45), zoom=11),
+        title="Carte des Risques de Coupure",
         height=600,
-        margin=dict(l=0, r=0, t=40, b=0)
+        margin=dict(l=0, r=0, t=40, b=0),
     )
     return fig
 
