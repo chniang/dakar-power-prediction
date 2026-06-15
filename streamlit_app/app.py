@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import plotly.graph_objects as go
 from datetime import datetime
 from pathlib import Path
 import sys
@@ -22,7 +23,7 @@ from streamlit_app.utils_simple import (
     create_risk_trend_chart,
 )
 from src.config import QUARTIERS_DAKAR, QUARTIER_ADJUSTMENT, classify_risk
-from src.weather_api import get_current_weather_dakar
+from src.weather_api import get_current_weather_dakar, get_weather_forecast_7days
 
 st.set_page_config(page_title="Dakar Power", page_icon="⚡", layout="wide")
 
@@ -34,10 +35,17 @@ if 'initialized' not in st.session_state:
 
 models = load_models_cached()
 
+_QUARTIER_RENAME = {
+    'Sicap-Liberte':    'Sicap-Liberté',
+    'Mermoz-Sacre-Coeur': 'Mermoz-Sacré-Cœur',
+}
+
 @st.cache_data
 def load_csv():
     try:
-        return pd.read_csv("data/synthetic/synthetic_data_v2.csv")
+        df = pd.read_csv("data/synthetic/synthetic_data_v2.csv")
+        df['quartier'] = df['quartier'].replace(_QUARTIER_RENAME)
+        return df
     except Exception as e:
         logger.error(f"Failed to load CSV: {e}")
         return None
@@ -201,6 +209,20 @@ with tab2:
 with tab3:
     st.header("📊 Statistiques CSV")
     if df_hist is not None:
+        # Métriques globales SENELEC
+        m1, m2, m3, m4 = st.columns(4)
+        q_max = df_hist.groupby('quartier')['coupure'].mean().idxmax()
+        with m1:
+            st.metric("🔴 Total Coupures", f"{int(df_hist['coupure'].sum()):,}")
+        with m2:
+            st.metric("⚠️ Plus à risque", q_max)
+        with m3:
+            st.metric("📊 Taux moyen", f"{df_hist['coupure'].mean()*100:.1f}%")
+        with m4:
+            st.metric("🌡️ Temp. moyenne", f"{df_hist['temp_celsius'].mean():.1f}°C")
+
+        st.markdown("---")
+
         quartier_filter = st.selectbox("Quartier", ["Tous"] + QUARTIERS_DAKAR, index=0, key='stats_q')
         df_f = df_hist if quartier_filter == "Tous" else df_hist[df_hist['quartier'] == quartier_filter]
         stats = df_f.groupby('quartier').agg({'coupure': ['sum', 'count'], 'temp_celsius': 'mean', 'conso_megawatt': 'mean'}).reset_index()
@@ -211,6 +233,37 @@ with tab3:
             st.plotly_chart(fig, use_container_width=True)
         st.dataframe(stats, use_container_width=True, hide_index=True)
         st.info(f"📊 {len(df_f):,} enregistrements")
+
+        st.markdown("---")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("⏰ Risque par Heure")
+            by_hour = df_hist.groupby('heure')['coupure'].mean() * 100
+            fig_h = go.Figure()
+            fig_h.add_trace(go.Scatter(
+                x=list(range(24)),
+                y=by_hour.reindex(range(24), fill_value=0).values,
+                mode='lines+markers', fill='tozeroy',
+                line=dict(color='#e74c3c', width=2), marker=dict(size=5),
+            ))
+            fig_h.update_layout(
+                xaxis_title="Heure", yaxis_title="Taux (%)",
+                xaxis=dict(tickmode='linear', tick0=0, dtick=3),
+                height=350, margin=dict(t=10),
+            )
+            st.plotly_chart(fig_h, use_container_width=True)
+        with col2:
+            st.subheader("📅 Risque par Mois")
+            by_month = df_hist.groupby('mois')['coupure'].mean() * 100
+            month_labels = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Aoû','Sep','Oct','Nov','Déc']
+            fig_m = go.Figure()
+            fig_m.add_trace(go.Bar(
+                x=month_labels,
+                y=by_month.reindex(range(1, 13), fill_value=0).values,
+                marker_color='#f39c12', opacity=0.85,
+            ))
+            fig_m.update_layout(xaxis_title="Mois", yaxis_title="Taux (%)", height=350, margin=dict(t=10))
+            st.plotly_chart(fig_m, use_container_width=True)
 
 with tab4:
     st.header("📈 Historique")
@@ -227,6 +280,38 @@ with tab4:
             fig_risk = create_risk_trend_chart(df_hist, quartier_hist)
             if fig_risk:
                 st.plotly_chart(fig_risk, use_container_width=True)
+
+        st.markdown("---")
+        st.subheader("🌤️ Prévisions Météo 7 Jours")
+        forecast = get_weather_forecast_7days()
+        if forecast:
+            df_fc = pd.DataFrame(forecast)
+            fig_fc = go.Figure()
+            fig_fc.add_trace(go.Bar(
+                x=df_fc['date'], y=df_fc['precipitation'],
+                name='Précipitations (mm)', marker_color='#3498db', opacity=0.6,
+            ))
+            fig_fc.add_trace(go.Scatter(
+                x=df_fc['date'], y=df_fc['temp_max'],
+                mode='lines+markers', name='Temp max (°C)',
+                line=dict(color='#e74c3c', width=2), yaxis='y2',
+            ))
+            fig_fc.add_trace(go.Scatter(
+                x=df_fc['date'], y=df_fc['temp_min'],
+                mode='lines+markers', name='Temp min (°C)',
+                line=dict(color='#2ecc71', width=2, dash='dot'), yaxis='y2',
+            ))
+            fig_fc.update_layout(
+                title="Prévisions Météo Dakar — 7 prochains jours",
+                xaxis_title="Date",
+                yaxis=dict(title="Précipitations (mm)"),
+                yaxis2=dict(title="Température (°C)", overlaying='y', side='right'),
+                hovermode='x unified',
+                height=400,
+            )
+            st.plotly_chart(fig_fc, use_container_width=True)
+        else:
+            st.info("🌐 Prévisions indisponibles (API météo)")
 
 
 
