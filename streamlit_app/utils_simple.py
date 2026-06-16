@@ -52,13 +52,20 @@ def load_models_cached():
         st.error(f"❌ Scaler: {e}")
     return models
 
-def create_time_features(date_time):
+def create_time_features(date_time: datetime, hour_override: int = None) -> dict:
+    hour = hour_override if hour_override is not None else date_time.hour
     month = date_time.month
     # Encodage binaire calé sur synthetic_data_v2.csv : saison pluies (Jun-Août) = 1, reste = 0
     saison = 1 if month in [6, 7, 8] else 0
     # is_peak_hour calé sur le CSV : heures 18-22 = 1 (soir uniquement)
-    is_peak_hour = 1 if 18 <= date_time.hour <= 22 else 0
-    return {'hour': date_time.hour, 'day_of_week': date_time.weekday(), 'month': date_time.month, 'saison': saison, 'is_peak_hour': is_peak_hour}
+    is_peak_hour = 1 if 18 <= hour <= 22 else 0
+    return {
+        'hour': hour,
+        'day_of_week': date_time.weekday(),
+        'month': month,
+        'saison': saison,
+        'is_peak_hour': is_peak_hour,
+    }
 
 def make_prediction_single(models, quartier, temp, humidite, vent, conso, time_features):
     lgb_model = models['lgb']
@@ -209,6 +216,7 @@ def create_temporal_chart(df_hist, quartier_filter):
             .mean()
             .reset_index()
         )
+        df_agg = df_agg[df_agg['conso_megawatt'] > 100]  # filtre semaines avec données manquantes
 
         fig = go.Figure()
         if 'conso_megawatt' in df_agg.columns:

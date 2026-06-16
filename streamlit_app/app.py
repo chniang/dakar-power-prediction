@@ -71,6 +71,12 @@ temperature  = st.sidebar.slider("Température (°C)",   15.0,  45.0,  25.0,  0.
 humidite     = st.sidebar.slider("Humidité (%)",        30.0, 100.0,  65.0,  1.0,  key='s_hum')
 vitesse_vent = st.sidebar.slider("Vent (km/h)",          0.0,  50.0,  15.0,  1.0,  key='s_wind')
 consommation = st.sidebar.slider("Consommation (MW)",  400.0, 1500.0, 800.0, 10.0)
+heure_pred   = st.sidebar.slider(
+    "🕐 Heure de prédiction", 0, 23,
+    datetime.now().hour, 1,
+    key='s_hour',
+    help="Changer l'heure affecte is_peak_hour (pic 18-22h)",
+)
 quartier = st.sidebar.selectbox("Quartier", QUARTIERS_DAKAR, index=0)
 
 if st.sidebar.button("🔮 Lancer la Prédiction", type="primary", use_container_width=True):
@@ -114,7 +120,7 @@ with tab1:
     st.header("🎯 Prédiction Immédiate")
     if st.session_state.get('run', False):
         params = st.session_state['params']
-        time_features = create_time_features(params['timestamp'])
+        time_features = create_time_features(params['timestamp'], hour_override=heure_pred)
         result = make_prediction_single(models, params['quartier'], params['temperature'], params['humidite'], params['vitesse_vent'], params['consommation'], time_features)
         
         if result:
@@ -161,50 +167,45 @@ with tab1:
 
 with tab2:
     st.header("🗺️ Carte Interactive")
-    if st.button("🔄 Calculer pour tous les quartiers"):
-        time_features = create_time_features(datetime.now())
-        lgb_model = models['lgb']
-        lstm_model = models['lstm']
-        scaler = models['scaler']
 
-        results = []
-        if lgb_model is None or scaler is None:
-            st.error("Modèles non chargés — impossible de calculer la carte.")
+    # Calcul automatique basé sur les paramètres actuels
+    time_features_map = create_time_features(datetime.now(), hour_override=heure_pred)
+    lgb_model = models['lgb']
+    lstm_model = models['lstm']
+    scaler    = models['scaler']
+
+    if lgb_model is None or scaler is None:
+        st.error("Modèles non chargés — impossible de calculer la carte.")
+    else:
+        feature_row = [
+            temperature, humidite, vitesse_vent, consommation,
+            time_features_map['hour'], time_features_map['day_of_week'],
+            time_features_map['month'], time_features_map['saison'],
+            time_features_map['is_peak_hour'],
+        ]
+        X = np.tile(feature_row, (len(QUARTIERS_DAKAR), 1))          # (8, 9)
+        X_scaled = scaler.transform(X)                                 # une seule passe
+        preds_lgb = lgb_model.predict(X_scaled) * 100                 # (8,) en un appel
+        if lstm_model is not None:
+            X_lstm = X_scaled.reshape(len(QUARTIERS_DAKAR), 1, -1)    # (8, 1, 9)
+            preds_lstm = lstm_model.predict(X_lstm, verbose=0).flatten() * 100
         else:
-            # Matrice 8×9 : une ligne par quartier, mêmes features météo pour tous
-            feature_row = [
-                temperature, humidite, vitesse_vent, consommation,
-                time_features['hour'], time_features['day_of_week'],
-                time_features['month'], time_features['saison'],
-                time_features['is_peak_hour'],
-            ]
-            X = np.tile(feature_row, (len(QUARTIERS_DAKAR), 1))   # (8, 9)
-            X_scaled = scaler.transform(X)                         # une seule passe
-
-            preds_lgb = lgb_model.predict(X_scaled) * 100         # (8,) en un appel
-
-            if lstm_model is not None:
-                X_lstm = X_scaled.reshape(len(QUARTIERS_DAKAR), 1, -1)  # (8, 1, 9)
-                preds_lstm = lstm_model.predict(X_lstm, verbose=0).flatten() * 100
-            else:
-                preds_lstm = preds_lgb.copy()
-
-            risque_base = (preds_lgb + preds_lstm) / 2
-
-            results = [
-                {
-                    'Quartier': q,
-                    'Risque': float(np.clip(risque_base[i] * QUARTIER_ADJUSTMENT.get(q, 1.0), 0, 100)),
-                }
-                for i, q in enumerate(QUARTIERS_DAKAR)
-            ]
-        if results:
-            fig = create_map(results)
-            st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
-            df_res = pd.DataFrame(results).sort_values('Risque', ascending=False)
-            df_res['Niveau'] = df_res['Risque'].apply(classify_risk)
-            df_res['Risque'] = df_res['Risque'].apply(lambda x: f"{x:.1f}%")
-            st.dataframe(df_res, use_container_width=True, hide_index=True)
+            preds_lstm = preds_lgb.copy()
+        risque_base = (preds_lgb + preds_lstm) / 2
+        results = [
+            {
+                'Quartier': q,
+                'Risque': float(np.clip(risque_base[i] * QUARTIER_ADJUSTMENT.get(q, 1.0), 0, 100)),
+            }
+            for i, q in enumerate(QUARTIERS_DAKAR)
+        ]
+        st.session_state['map_results'] = results
+        fig = create_map(results)
+        st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
+        df_res = pd.DataFrame(results).sort_values('Risque', ascending=False)
+        df_res['Niveau'] = df_res['Risque'].apply(classify_risk)
+        df_res['Risque'] = df_res['Risque'].apply(lambda x: f"{x:.1f}%")
+        st.dataframe(df_res, use_container_width=True, hide_index=True)
 
 with tab3:
     st.header("📊 Statistiques CSV")

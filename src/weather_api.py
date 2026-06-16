@@ -61,7 +61,7 @@ def get_weather_forecast_7days() -> list[dict] | None:
                 'date':          daily['time'][i],
                 'temp_max':      daily['temperature_2m_max'][i],
                 'temp_min':      daily['temperature_2m_min'][i],
-                'precipitation': daily['precipitation_sum'][i],
+                'precipitation': max(0.0, daily['precipitation_sum'][i] or 0.0),
                 'wind_max':      daily['wind_speed_10m_max'][i],
             }
             for i in range(len(daily['time']))
