@@ -33,7 +33,7 @@ Application web interactive permettant de :
 - **Analyser les tendances** de consommation et de coupures par quartier
 - **Exporter les données** pour reporting et analyses complémentaires
 
-**Zones couvertes :** Dakar-Plateau, Guédiawaye, Pikine, Parcelles Assainies, Grand-Yoff, Ouakam, Médina, Almadies
+**Zones couvertes :** Guédiawaye, Parcelles Assainies, Pikine, Sicap-Liberté, Yoff, Mermoz-Sacré-Cœur, Dakar-Plateau, Fann
 
 ---
 
@@ -88,7 +88,8 @@ J'ai développé un **système d'ensemble combinant 2 algorithmes** pour maximis
 ✅ **Précision globale : 88-90%** sur les prédictions de coupure  
 ✅ **Temps de prédiction : <1 seconde** pour les 8 quartiers  
 ✅ **Interface responsive** accessible sur desktop et mobile  
-✅ **Export CSV** pour intégration dans systèmes de reporting
+✅ **Export CSV** pour intégration dans systèmes de reporting  
+✅ **Prévisions météo 7 jours** via Open-Meteo API intégrée
 
 ### Insights Métier Découverts
 
@@ -142,7 +143,8 @@ streamlit run streamlit_app/app.py
 
 ## 🔮 AMÉLIORATIONS FUTURES
 
-- [ ] Intégration de données réelles SENELEC (si API disponible)
+- [ ] Intégration données réelles SENELEC pour réentraînement
+- [x] ✅ Données météo temps réel via Open-Meteo API (déjà intégré)
 - [ ] Ajout de notifications push pour alertes en temps réel
 - [ ] Extension à d'autres villes du Sénégal (Thiès, Saint-Louis)
 - [ ] Module de recommandations personnalisées (ex: meilleur moment pour utiliser électroménagers)
@@ -152,7 +154,7 @@ streamlit run streamlit_app/app.py
 
 ## 👨‍💻 AUTEUR
 
-**Cheikh Niang** - Data Scientist Junior  
+**Cheikh Niang** - Data Scientist spécialisé IA & Énergie  
 Passionné par l'application du ML à des problèmes sociétaux réels en Afrique.
 
 📧 cheikhniang159@gmail.com  

@@ -93,7 +93,7 @@ def make_prediction_single(models, quartier, temp, humidite, vent, conso, time_f
             pred_lstm = pred_lgb
         risque_base = (pred_lgb + pred_lstm) / 2
         adjustment = QUARTIER_ADJUSTMENT.get(quartier, 1.0)
-        risque_ajuste = risque_base * adjustment
+        risque_ajuste = max(5.0, risque_base * adjustment)
         pred_lgb = np.clip(pred_lgb, 0, 100)
         pred_lstm = np.clip(pred_lstm, 0, 100)
         risque_ajuste = np.clip(risque_ajuste, 0, 100)
@@ -216,7 +216,7 @@ def create_temporal_chart(df_hist, quartier_filter):
             .mean()
             .reset_index()
         )
-        df_agg = df_agg[df_agg['conso_megawatt'] > 100]  # filtre semaines avec données manquantes
+        df_agg = df_agg[df_agg['conso_megawatt'] > 400]  # filtre semaines avec données manquantes
 
         fig = go.Figure()
         if 'conso_megawatt' in df_agg.columns:

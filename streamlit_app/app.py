@@ -307,8 +307,8 @@ with tab4:
             fig_fc.update_layout(
                 title="Prévisions Météo Dakar — 7 prochains jours",
                 xaxis_title="Date",
-                yaxis=dict(title="Précipitations (mm)"),
-                yaxis2=dict(title="Température (°C)", overlaying='y', side='right'),
+                yaxis=dict(title="Précipitations (mm)", range=[0, 20]),
+                yaxis2=dict(title="Température (°C)", overlaying='y', side='right', range=[20, 45]),
                 hovermode='x unified',
                 height=400,
             )
