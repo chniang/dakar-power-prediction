@@ -11,15 +11,6 @@ MODELS_DIR = 'models/'
 DATA_DIR = 'data/'
 SYNTHETIC_DIR = 'data/synthetic/'
 # ============================================================================
-# CONFIGURATION SUPABASE
-# ============================================================================
-
-SUPABASE_CONFIG = {
-    'url': 'https://krudbbmsixrejemqqphn.supabase.co',
-    'key': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtydWRiYm1zaXhyZWplbXFxcGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDc4NzAsImV4cCI6MjA3OTcyMzg3MH0.X4HEFRhR-WOsc0g-d70NAqLOy33qst7Z7z-EUIOnhjQ'
-}
-
-# ============================================================================
 # QUARTIERS DE DAKAR (8 quartiers)
 # ============================================================================
 
