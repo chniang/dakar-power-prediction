@@ -216,7 +216,11 @@ def create_temporal_chart(df_hist, quartier_filter):
             .mean()
             .reset_index()
         )
-        df_agg = df_agg[df_agg['conso_megawatt'] > 400]  # filtre semaines avec données manquantes
+        df_agg[['conso_megawatt', 'temp_celsius']] = (
+            df_agg[['conso_megawatt', 'temp_celsius']]
+            .interpolate(method='linear')
+        )
+        df_agg = df_agg.dropna()
 
         fig = go.Figure()
         if 'conso_megawatt' in df_agg.columns:

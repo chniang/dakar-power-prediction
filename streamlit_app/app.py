@@ -195,7 +195,7 @@ with tab2:
         results = [
             {
                 'Quartier': q,
-                'Risque': float(np.clip(risque_base[i] * QUARTIER_ADJUSTMENT.get(q, 1.0), 0, 100)),
+                'Risque': float(np.clip(max(5.0, risque_base[i] * QUARTIER_ADJUSTMENT.get(q, 1.0)), 0, 100)),
             }
             for i, q in enumerate(QUARTIERS_DAKAR)
         ]
