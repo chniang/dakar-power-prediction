@@ -23,7 +23,7 @@ from streamlit_app.utils_simple import (
     create_temporal_chart,
     create_risk_trend_chart,
 )
-from src.config import QUARTIERS_DAKAR, QUARTIER_ADJUSTMENT, classify_risk
+from src.config import QUARTIERS_DAKAR, classify_risk
 from src.weather_api import get_current_weather_dakar, get_weather_forecast_7days
 
 st.set_page_config(page_title="Dakar Power", page_icon="⚡", layout="wide")
