@@ -17,7 +17,7 @@ Tous les changements notables de ce projet seront documentés dans ce fichier.
 
 ### Fonctionnalités
 - Prédiction pour 8 quartiers de Dakar
-- Dataset de 70 001 enregistrements
+- Dataset de 70 000 enregistrements
 - Interface utilisateur intuitive
 - Visualisations interactives Plotly
 

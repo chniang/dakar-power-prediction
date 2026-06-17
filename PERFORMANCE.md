@@ -45,7 +45,7 @@
 ## 📁 Dataset
 
 ### Caractéristiques
-- **Taille totale** : 70 001 enregistrements
+- **Taille totale** : 70 000 enregistrements
 - **Split** : 80% train (56 000) / 20% test (14 000)
 - **Quartiers** : 8 zones de Dakar
 - **Période** : Données synthétiques représentatives
@@ -86,7 +86,7 @@ Le système classe les prédictions en 3 niveaux :
 
 ### 1. Prétraitement
 \\\
-- Chargement du dataset (70 001 lignes)
+- Chargement du dataset (70 000 lignes)
 - Séparation features (X) / target (y)
 - Split train/test (80/20)
 - Normalisation avec StandardScaler (fit sur train)
@@ -152,7 +152,7 @@ QUARTIER_ADJUSTMENT = {
 ## ✅ Conclusion
 
 Les modèles LightGBM et LSTM ont été :
-- ✅ **Entraînés** sur 70 001 enregistrements
+- ✅ **Entraînés** sur 70 000 enregistrements
 - ✅ **Validés** sur ensemble de test indépendant
 - ✅ **Déployés** dans l'application Streamlit
 - ✅ **Testés** en conditions réelles

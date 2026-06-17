@@ -59,7 +59,7 @@ J'ai développé un **système d'ensemble combinant 2 algorithmes** pour maximis
 
 ### Dataset
 
-- **70 001 enregistrements** de données synthétiques réalistes
+- **70 000 enregistrements** de données synthétiques réalistes
 - **Features principales :** Température, Humidité, Vitesse du vent, Consommation électrique, Quartier, Période (jour/nuit)
 - **Target :** Présence ou absence de coupure (binaire)
 
