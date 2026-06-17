@@ -55,10 +55,15 @@ def load_models_cached():
 def create_time_features(date_time: datetime, hour_override: int = None) -> dict:
     hour = hour_override if hour_override is not None else date_time.hour
     month = date_time.month
-    # Encodage binaire calé sur synthetic_data_v2.csv : saison pluies (Jun-Août) = 1, reste = 0
-    saison = 1 if month in [6, 7, 8] else 0
-    # is_peak_hour calé sur le CSV : heures 18-22 = 1 (soir uniquement)
-    is_peak_hour = 1 if 18 <= hour <= 22 else 0
+    # Encodage 3 saisons Dakar — doit correspondre exactement à data_generator.get_season()
+    if month in [11, 12, 1, 2]:
+        saison = 0  # Saison sèche fraîche
+    elif month in [3, 4, 5]:
+        saison = 1  # Saison sèche chaude
+    else:
+        saison = 2  # Saison des pluies (Jun-Oct)
+    # Heures de pointe — doit correspondre à data_generator.is_peak_hour()
+    is_peak_hour = 1 if (7 <= hour <= 9 or 18 <= hour <= 21) else 0
     return {
         'hour': hour,
         'day_of_week': date_time.weekday(),

@@ -68,4 +68,5 @@ The LSTM expects shape `(1, 1, 9)` — single sample, single timestep, 9 feature
 - Models must be loaded from the project root (paths like `'models/lgbm_model.pkl'`). Always run the app from the repo root.
 - LSTM is loaded with `compile=False` then recompiled manually to avoid Keras serialization compatibility issues.
 - The app degrades gracefully: if LSTM fails to load, LightGBM prediction is used for both model slots.
-- `saison` encoding differs between `data_generator.py` (0/1/2 for Dakar's three seasons) and `utils_simple.py` (1/2/3/4 for four calendar seasons). Training data uses the 3-season encoding.
+- `saison` uses the 3-season Dakar encoding (0 = sèche fraîche Nov-Fév, 1 = sèche chaude Mar-Mai, 2 = pluies Jun-Oct) in both `data_generator.py` and `utils_simple.py`. Both must stay in sync.
+- `is_peak_hour` = 1 for hours 7–9 and 18–21 (matching `data_generator.is_peak_hour()`). Both files must stay in sync.

@@ -13,7 +13,7 @@ COPY data ./data
 COPY src ./src
 COPY .streamlit ./.streamlit
 
-# Installer les dependances (sans TensorFlow pour eviter le timeout HF)
+# Installer les dependances
 RUN pip install --no-cache-dir -r requirements-hf.txt
 
 # Exposer le port
