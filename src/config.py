@@ -55,10 +55,20 @@ QUARTIER_ADJUSTMENT = {
     'Fann': 0.95                # ATTENTION : absent des données d'entraînement
 }
 
+RISK_THRESHOLDS = {'faible': 40, 'eleve': 70}
+RISK_FLOOR = 5.0
+
 def classify_risk(score: float) -> str:
-    if score < 40: return "FAIBLE"
-    elif score < 70: return "MOYEN"
+    if score < RISK_THRESHOLDS['faible']: return "FAIBLE"
+    elif score < RISK_THRESHOLDS['eleve']: return "MOYEN"
     return "ÉLEVÉ"
+
+SLIDER_CONFIG = {
+    'temperature':  {'min': 15.0,  'max':   45.0, 'default': 25.0,  'step':  0.5},
+    'humidite':     {'min': 30.0,  'max':  100.0, 'default': 65.0,  'step':  1.0},
+    'vitesse_vent': {'min':  0.0,  'max':   50.0, 'default': 15.0,  'step':  1.0},
+    'consommation': {'min': 400.0, 'max': 1500.0, 'default': 800.0, 'step': 10.0},
+}
 
 # ============================================================================
 # CONFIGURATION MODÈLES ML

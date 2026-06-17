@@ -21,7 +21,8 @@ except ImportError:
 warnings.filterwarnings('ignore', category=UserWarning, module='keras')
 warnings.filterwarnings('ignore', category=UserWarning, module='lightgbm')
 
-from src.config import QUARTIERS_DAKAR, COORDONNEES_QUARTIERS, QUARTIER_ADJUSTMENT, classify_risk
+from src.config import (QUARTIERS_DAKAR, COORDONNEES_QUARTIERS, QUARTIER_ADJUSTMENT,
+                        classify_risk, RISK_THRESHOLDS, RISK_FLOOR)
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +99,7 @@ def make_prediction_single(models, quartier, temp, humidite, vent, conso, time_f
             pred_lstm = pred_lgb
         risque_base = (pred_lgb + pred_lstm) / 2
         adjustment = QUARTIER_ADJUSTMENT.get(quartier, 1.0)
-        risque_ajuste = max(5.0, risque_base * adjustment)
+        risque_ajuste = max(RISK_FLOOR, risque_base * adjustment)
         pred_lgb = np.clip(pred_lgb, 0, 100)
         pred_lstm = np.clip(pred_lstm, 0, 100)
         risque_ajuste = np.clip(risque_ajuste, 0, 100)
@@ -130,15 +131,15 @@ def compute_map_risks(models, temperature, humidite, vitesse_vent, consommation,
     return [
         {
             'Quartier': q,
-            'Risque': float(np.clip(max(5.0, risque_base[i] * QUARTIER_ADJUSTMENT.get(q, 1.0)), 0, 100)),
+            'Risque': float(np.clip(max(RISK_FLOOR, risque_base[i] * QUARTIER_ADJUSTMENT.get(q, 1.0)), 0, 100)),
         }
         for i, q in enumerate(QUARTIERS_DAKAR)
     ]
 
 def get_risk_color(risque_pct):
-    if risque_pct < 40:
+    if risque_pct < RISK_THRESHOLDS['faible']:
         return "#2ecc71"
-    elif risque_pct < 70:
+    elif risque_pct < RISK_THRESHOLDS['eleve']:
         return "#f39c12"
     else:
         return "#e74c3c"

@@ -23,7 +23,7 @@ from streamlit_app.utils_simple import (
     create_temporal_chart,
     create_risk_trend_chart,
 )
-from src.config import QUARTIERS_DAKAR, classify_risk
+from src.config import QUARTIERS_DAKAR, classify_risk, RISK_THRESHOLDS, SLIDER_CONFIG
 from src.weather_api import get_current_weather_dakar, get_weather_forecast_7days
 
 st.set_page_config(page_title="Dakar Power", page_icon="⚡", layout="wide")
@@ -69,15 +69,16 @@ if st.sidebar.button("🌤️ Météo actuelle Dakar", use_container_width=True)
 if 'wx_time' in st.session_state:
     st.sidebar.caption(f"⏱️ Données météo en temps réel — {st.session_state['wx_time']}")
 
-temperature  = st.sidebar.slider("Température (°C)",   15.0,  45.0,  25.0,  0.5,  key='s_temp')
-humidite     = st.sidebar.slider("Humidité (%)",        30.0, 100.0,  65.0,  1.0,  key='s_hum')
-vitesse_vent = st.sidebar.slider("Vent (km/h)",          0.0,  50.0,  15.0,  1.0,  key='s_wind')
-consommation = st.sidebar.slider("Consommation (MW)",  400.0, 1500.0, 800.0, 10.0)
+_sc = SLIDER_CONFIG
+temperature  = st.sidebar.slider("Température (°C)",  _sc['temperature']['min'],  _sc['temperature']['max'],  _sc['temperature']['default'],  _sc['temperature']['step'],  key='s_temp')
+humidite     = st.sidebar.slider("Humidité (%)",       _sc['humidite']['min'],     _sc['humidite']['max'],     _sc['humidite']['default'],     _sc['humidite']['step'],     key='s_hum')
+vitesse_vent = st.sidebar.slider("Vent (km/h)",        _sc['vitesse_vent']['min'], _sc['vitesse_vent']['max'], _sc['vitesse_vent']['default'], _sc['vitesse_vent']['step'], key='s_wind')
+consommation = st.sidebar.slider("Consommation (MW)",  _sc['consommation']['min'], _sc['consommation']['max'], _sc['consommation']['default'], _sc['consommation']['step'])
 heure_pred   = st.sidebar.slider(
     "🕐 Heure de prédiction", 0, 23,
     datetime.now().hour, 1,
     key='s_hour',
-    help="Changer l'heure affecte is_peak_hour (pic 18-22h)",
+    help="Changer l'heure affecte is_peak_hour (pic 7-9h et 18-21h)",
 )
 quartier = st.sidebar.selectbox("Quartier", QUARTIERS_DAKAR, index=0)
 
@@ -145,9 +146,9 @@ with tab1:
             with col3:
                 st.metric("⚠️ NIVEAU", niveau)
             
-            if risque < 40:
+            if risque < RISK_THRESHOLDS['faible']:
                 st.success(f"✅ Risque {niveau} ({risque:.0f}%)")
-            elif risque < 70:
+            elif risque < RISK_THRESHOLDS['eleve']:
                 st.warning(f"⚠️ Risque {niveau} ({risque:.0f}%)")
             else:
                 st.error(f"🚨 Risque {niveau} ({risque:.0f}%)")
