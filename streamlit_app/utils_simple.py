@@ -102,6 +102,34 @@ def make_prediction_single(models, quartier, temp, humidite, vent, conso, time_f
         st.error(f"❌ Erreur: {e}")
         return None
 
+def compute_map_risks(models, temperature, humidite, vitesse_vent, consommation, time_features):
+    lgb_model = models['lgb']
+    lstm_model = models['lstm']
+    scaler = models['scaler']
+    if lgb_model is None or scaler is None:
+        return None
+    feature_row = [
+        temperature, humidite, vitesse_vent, consommation,
+        time_features['hour'], time_features['day_of_week'],
+        time_features['month'], time_features['saison'],
+        time_features['is_peak_hour'],
+    ]
+    X = np.tile(feature_row, (len(QUARTIERS_DAKAR), 1))
+    X_scaled = scaler.transform(X)
+    preds_lgb = lgb_model.predict(X_scaled) * 100
+    if lstm_model is not None:
+        preds_lstm = lstm_model.predict(X_scaled.reshape(len(QUARTIERS_DAKAR), 1, -1), verbose=0).flatten() * 100
+    else:
+        preds_lstm = preds_lgb.copy()
+    risque_base = (preds_lgb + preds_lstm) / 2
+    return [
+        {
+            'Quartier': q,
+            'Risque': float(np.clip(max(5.0, risque_base[i] * QUARTIER_ADJUSTMENT.get(q, 1.0)), 0, 100)),
+        }
+        for i, q in enumerate(QUARTIERS_DAKAR)
+    ]
+
 def get_risk_color(risque_pct):
     if risque_pct < 40:
         return "#2ecc71"
