@@ -18,7 +18,7 @@
 **Validation** :
 - Métrique : Accuracy (classification binaire)
 - Ensemble de test : 20% des données (~14 000 enregistrements)
-- Performance : Validée sur données réelles
+- Performance : Validée sur données synthétiques
 
 ### LSTM (Deep Learning)
 - **Framework** : TensorFlow/Keras
@@ -27,7 +27,7 @@
 - **Statut** : ✅ Entraîné et validé
 
 **Architecture** :
-- Couche LSTM : 1 couche
+- Couches LSTM : 2 couches (LSTM 64 units → Dropout 0.2 → LSTM 32 units → Dropout 0.2)
 - Fonction d'activation : Sigmoid (sortie binaire)
 - Optimiseur : Adam
 - Loss : Binary crossentropy
@@ -38,7 +38,7 @@
 - Performance : Capture patterns temporels complexes
 
 ### Modèle Ensemble
-- **Méthode** : Moyenne pondérée des prédictions LightGBM et LSTM
+- **Méthode** : Moyenne simple des prédictions LightGBM et LSTM
 - **Ajustement** : Facteur de correction par quartier
 - **Normalisation** : StandardScaler pour features numériques
 
@@ -63,11 +63,11 @@
    - Heure de la journée (0-23)
    - Jour de la semaine (0-6)
    - Mois de l'année (1-12)
-   - Saison (1-4)
-   - Indicateur heure de pointe (0/1)
+   - Saison (0/1/2 — sèche fraîche/sèche chaude/pluies)
+   - Indicateur heure de pointe (0/1 — pic à 7-9h et 18-21h)
 
-4. **Géographiques**
-   - Quartier (8 zones)
+4. **Ajustement post-prédiction**
+   - Facteur par quartier (QUARTIER_ADJUSTMENT) appliqué après inférence, pas une feature du modèle
 
 ### Variable cible
 - **Coupure** : Binaire (0 = Pas de coupure, 1 = Coupure)
@@ -105,7 +105,10 @@ lgb_model.fit(X_train, y_train)
 ### 3. Entraînement LSTM
 \\\python
 model = Sequential([
-    LSTM(50, input_shape=(1, n_features)),
+    LSTM(64, input_shape=(1, n_features), return_sequences=True),
+    Dropout(0.2),
+    LSTM(32),
+    Dropout(0.2),
     Dense(1, activation='sigmoid')
 ])
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
@@ -138,14 +141,14 @@ Les prédictions sont ajustées selon les caractéristiques de chaque quartier :
 
 \\\python
 QUARTIER_ADJUSTMENT = {
-    "Guédiawaye": 1.15,      # +15% risque
-    "Pikine": 1.20,          # +20% risque
-    "Sicap-Liberté": 0.95,   # -5% risque
-    "Parcelles Assainies": 1.10,
-    "Dakar-Plateau": 0.90,
-    "Yoff": 1.05,
-    "Fann": 0.92,
-    "Mermoz-Sacré-Cœur": 0.93
+    "Guédiawaye": 1.15,           # +15% risque
+    "Pikine": 1.20,               # +20% risque (absent du training)
+    "Parcelles Assainies": 1.10,  # +10% risque
+    "Sicap-Liberté": 1.05,        # +5% risque
+    "Yoff": 1.00,                 # référence
+    "Fann": 0.95,                 # -5% risque (absent du training)
+    "Mermoz-Sacré-Cœur": 0.90,   # -10% risque
+    "Dakar-Plateau": 0.85,        # -15% risque
 }
 \\\
 
