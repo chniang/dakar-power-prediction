@@ -33,7 +33,7 @@ Application web interactive permettant de :
 - **Analyser les tendances** de consommation et de coupures par quartier
 - **Exporter les données** pour reporting et analyses complémentaires
 
-**Zones couvertes :** Guédiawaye, Parcelles Assainies, Pikine, Sicap-Liberté, Yoff, Mermoz-Sacré-Cœur, Dakar-Plateau, Fann
+**Zones couvertes :** Guédiawaye, Parcelles Assainies, Sicap-Liberté, Yoff, Mermoz-Sacré-Cœur, Dakar-Plateau *(données d'entraînement)*, Pikine et Fann *(estimations par ajustement géographique)*
 
 ---
 
@@ -46,21 +46,19 @@ J'ai développé un **système d'ensemble combinant 2 algorithmes** pour maximis
 1. **LightGBM** (Gradient Boosting)
    - Traitement rapide des features tabulaires
    - Gestion native des variables catégorielles
-   - **Précision : ~88%**
 
-2. **LSTM** (Deep Learning - Réseau de Neurones Récurrent)
-   - Capture des dépendances temporelles
+2. **LSTM** (Deep Learning - Réseau de Neurones Récurrent, 2 couches)
+   - Capture des interactions entre features
    - Apprentissage de patterns complexes
-   - **Précision : ~90%**
 
-3. **Prédiction finale** : Moyenne pondérée des 2 modèles
+3. **Prédiction finale** : Moyenne simple des 2 modèles
    - Risque exprimé en pourcentage (0-100%)
    - Classification : FAIBLE (0-39%), MOYEN (40-69%), ÉLEVÉ (70-100%)
 
 ### Dataset
 
-- **70 000 enregistrements** de données synthétiques réalistes
-- **Features principales :** Température, Humidité, Vitesse du vent, Consommation électrique, Quartier, Période (jour/nuit)
+- **70 000 enregistrements** de données synthétiques réalistes (6 quartiers entraînés)
+- **Features principales :** Température, Humidité, Vitesse du vent, Consommation électrique, Heure, Jour, Mois, Saison, Heure de pointe
 - **Target :** Présence ou absence de coupure (binaire)
 
 ---
@@ -85,17 +83,16 @@ J'ai développé un **système d'ensemble combinant 2 algorithmes** pour maximis
 
 ## 📊 RÉSULTATS CLÉS
 
-✅ **Précision globale : 88-90%** sur les prédictions de coupure  
+✅ **Modèles validés** sur données synthétiques (split 80/20)  
 ✅ **Temps de prédiction : <1 seconde** pour les 8 quartiers  
 ✅ **Interface responsive** accessible sur desktop et mobile  
 ✅ **Export CSV** pour intégration dans systèmes de reporting  
 ✅ **Prévisions météo 7 jours** via Open-Meteo API intégrée
 
-### Insights Métier Découverts
+### Patterns observés dans les données synthétiques
 
-- **65% des coupures** surviennent en période de forte chaleur (>30°C)
-- **Pikine et Guédiawaye** présentent les taux de coupure les plus élevés
-- **Corrélation forte** entre pics de consommation (19h-22h) et risques de délestage
+- **Guédiawaye** présente le facteur de risque le plus élevé parmi les quartiers entraînés
+- **Corrélation** entre pics de consommation (18-21h, 7-9h) et risques de délestage
 
 ---
 
