@@ -17,17 +17,31 @@ def test_create_time_features_keys():
 
 
 def test_saison_juillet():
+    # Juillet → saison des pluies (Jun-Oct) → 2
     result = create_time_features(datetime(2024, 7, 1, 12, 0))
+    assert result['saison'] == 2
+
+
+def test_saison_avril():
+    # Avril → saison sèche chaude (Mar-Mai) → 1
+    result = create_time_features(datetime(2024, 4, 1, 12, 0))
     assert result['saison'] == 1
 
 
 def test_saison_janvier():
+    # Janvier → saison sèche fraîche (Nov-Fév) → 0
     result = create_time_features(datetime(2024, 1, 1, 12, 0))
     assert result['saison'] == 0
 
 
 def test_is_peak_hour_20h():
     result = create_time_features(datetime(2024, 6, 15, 20, 0))
+    assert result['is_peak_hour'] == 1
+
+
+def test_is_peak_hour_8h():
+    # Pic matin 7-9h
+    result = create_time_features(datetime(2024, 6, 15, 8, 0))
     assert result['is_peak_hour'] == 1
 
 

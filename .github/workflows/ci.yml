@@ -24,4 +24,4 @@ jobs:
           pip install pytest pandas numpy scikit-learn lightgbm streamlit plotly
 
       - name: Run tests
-        run: python -m pytest tests/test_config.py -v
+        run: python -m pytest tests/test_config.py tests/test_features.py -v
