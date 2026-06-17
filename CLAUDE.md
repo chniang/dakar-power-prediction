@@ -18,9 +18,6 @@ streamlit run streamlit_app/app.py
 # Retrain models from the local CSV (takes 10–15 min due to LSTM)
 python scripts/2_train_models.py
 
-# Load synthetic data to Supabase
-python scripts/3_load_to_supabase.py
-
 # Generate fresh synthetic data (outputs to data/raw/raw_data.csv)
 python src/data_generator.py
 ```
@@ -40,10 +37,8 @@ The Dockerfile installs `libgomp1` (required by LightGBM on Linux) before instal
 streamlit_app/app.py        # Entry point; sidebar controls, 4 tabs (Prédiction, Carte, Stats, Historique)
 streamlit_app/utils_simple.py  # All ML inference, chart creation, and model loading (@st.cache_resource)
 src/config.py               # Central config: quartier names, GPS coords, risk adjustments, model feature list
-src/database.py             # Supabase REST API client (bulk insert, prediction save, stats queries)
 src/data_generator.py       # Synthetic data generation with per-quartier risk profiles
 scripts/2_train_models.py   # Train LightGBM + LSTM, saves to models/
-scripts/3_load_to_supabase.py  # Upload CSV to Supabase enregistrements table
 models/                     # lgbm_model.pkl, lstm_model.keras, scaler.pkl (tracked via Git LFS)
 data/synthetic/synthetic_data_v2.csv  # Training dataset (Git LFS)
 ```
@@ -67,10 +62,6 @@ This order is defined in `src/config.py:MODEL_CONFIG['features']` and must stay 
 ### LSTM Input Shape
 
 The LSTM expects shape `(1, 1, 9)` — single sample, single timestep, 9 features. This is a deliberate simplification; the model captures feature interactions rather than true time series.
-
-### Supabase
-
-Credentials are hardcoded in `src/config.py:SUPABASE_CONFIG`. The anon key is public by design (PostgREST RLS). Two tables: `enregistrements` (historical data) and `predictions` (logged inference results). `src/database.py` uses raw `requests` against the REST API, not the Supabase Python client.
 
 ## Key Constraints
 
