@@ -55,41 +55,10 @@ QUARTIER_ADJUSTMENT = {
     'Fann': 0.95                # ATTENTION : absent des données d'entraînement
 }
 
-# ============================================================================
-# SEUILS DE RISQUE (en pourcentage)
-# ============================================================================
-
-SEUILS_RISQUE = {
-    'faible': 40,
-    'moyen': 40,
-    'eleve': 70
-}
-
 def classify_risk(score: float) -> str:
     if score < 40: return "FAIBLE"
     elif score < 70: return "MOYEN"
     return "ÉLEVÉ"
-
-# ============================================================================
-# PLAGES DE TEMPÉRATURE PAR SAISON
-# ============================================================================
-
-TEMPERATURE_RANGES = {
-    'hiver': (18, 28),
-    'printemps': (20, 30),
-    'ete': (24, 35),
-    'automne': (22, 32)
-}
-
-# ============================================================================
-# PLAGES DE CONSOMMATION (MW)
-# ============================================================================
-
-CONSO_RANGES = {
-    'base': (400, 600),
-    'normale': (600, 900),
-    'pointe': (900, 1400)
-}
 
 # ============================================================================
 # CONFIGURATION MODÈLES ML
