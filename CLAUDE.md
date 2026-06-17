@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Dakar Power Prediction is a Streamlit web app that predicts electricity outage risk (0–100%) for 8 Dakar neighborhoods using a hybrid ML ensemble (LightGBM + LSTM). Models are pre-trained on 70,001 synthetic records and stored as binary artifacts in `models/`.
+Dakar Power Prediction is a Streamlit web app that predicts electricity outage risk (0–100%) for 8 Dakar neighborhoods using a hybrid ML ensemble (LightGBM + LSTM). Models are pre-trained on 70,000 synthetic records and stored as binary artifacts in `models/`.
 
 ## Commands
 

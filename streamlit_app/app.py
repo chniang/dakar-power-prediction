@@ -99,7 +99,7 @@ Application de prédiction des coupures d'électricité à Dakar.
 - 🧠 LSTM
 
 **Données :**
-- 70,001 enregistrements
+- 70,000 enregistrements
 - 8 quartiers
 """)
 st.sidebar.markdown("---")
