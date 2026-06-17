@@ -15,7 +15,7 @@ SYNTHETIC_DIR = 'data/synthetic/'
 # ============================================================================
 
 QUARTIERS_DAKAR = [
-    'Guediawaye',
+    'Guédiawaye',
     'Parcelles Assainies',
     'Pikine',            # ATTENTION : absent des données d'entraînement (data_generator.py)
     'Sicap-Liberté',
@@ -30,7 +30,7 @@ QUARTIERS_DAKAR = [
 # ============================================================================
 
 COORDONNEES_QUARTIERS = {
-    'Guediawaye': {'lat': 14.7692, 'lon': -17.4008},
+    'Guédiawaye': {'lat': 14.7692, 'lon': -17.4008},
     'Parcelles Assainies': {'lat': 14.7586, 'lon': -17.4147},
     'Pikine': {'lat': 14.7564, 'lon': -17.3924},
     'Sicap-Liberté': {'lat': 14.7167, 'lon': -17.4677},
@@ -45,7 +45,7 @@ COORDONNEES_QUARTIERS = {
 # ============================================================================
 
 QUARTIER_ADJUSTMENT = {
-    'Guediawaye': 1.15,
+    'Guédiawaye': 1.15,
     'Parcelles Assainies': 1.10,
     'Pikine': 1.20,             # ATTENTION : absent des données d'entraînement
     'Sicap-Liberté': 1.05,

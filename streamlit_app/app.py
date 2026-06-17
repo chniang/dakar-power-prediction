@@ -36,7 +36,8 @@ if 'initialized' not in st.session_state:
 models = load_models_cached()
 
 _QUARTIER_RENAME = {
-    'Sicap-Liberte':    'Sicap-Liberté',
+    'Guediawaye':         'Guédiawaye',
+    'Sicap-Liberte':      'Sicap-Liberté',
     'Mermoz-Sacre-Coeur': 'Mermoz-Sacré-Cœur',
 }
 
