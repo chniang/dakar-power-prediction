@@ -133,8 +133,8 @@ streamlit run streamlit_app/app.py
 ### Carte Interactive des Quartiers
 ![Carte](images/carte.png)
 
-### Analytics et Tendances
-![Analytics](images/analytics.png)
+### Statistiques et Tendances
+![Statistiques](images/analytics.png)
 
 ---
 

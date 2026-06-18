@@ -7,7 +7,7 @@
 ### LightGBM (Gradient Boosting)
 - **Framework** : LightGBM
 - **Type** : Gradient Boosting Decision Tree
-- **Fichier** : \models/lgbm_model.pkl\
+- **Fichier** : `models/lgbm_model.pkl`
 - **Statut** : ✅ Entraîné et validé
 
 **Configuration** :
@@ -23,7 +23,7 @@
 ### LSTM (Deep Learning)
 - **Framework** : TensorFlow/Keras
 - **Type** : Réseau de neurones récurrent (LSTM)
-- **Fichier** : \models/lstm_model.keras\
+- **Fichier** : `models/lstm_model.keras`
 - **Statut** : ✅ Entraîné et validé
 
 **Architecture** :
@@ -85,25 +85,25 @@ Le système classe les prédictions en 3 niveaux :
 ## 🔬 Méthodologie d'Entraînement
 
 ### 1. Prétraitement
-\\\
+```
 - Chargement du dataset (70 000 lignes)
 - Séparation features (X) / target (y)
 - Split train/test (80/20)
 - Normalisation avec StandardScaler (fit sur train)
-\\\
+```
 
 ### 2. Entraînement LightGBM
-\\\python
+```python
 lgb_model = LGBMClassifier(
     n_estimators=100,
     max_depth=5,
     random_state=42
 )
 lgb_model.fit(X_train, y_train)
-\\\
+```
 
 ### 3. Entraînement LSTM
-\\\python
+```python
 model = Sequential([
     LSTM(64, input_shape=(1, n_features), return_sequences=True),
     Dropout(0.2),
@@ -113,12 +113,12 @@ model = Sequential([
 ])
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 model.fit(X_train_lstm, y_train, epochs=10, batch_size=32)
-\\\
+```
 
 ### 4. Sauvegarde
-- LightGBM : \pickle.dump()\ → \lgbm_model.pkl\
-- LSTM : \model.save()\ → \lstm_model.keras\
-- Scaler : \pickle.dump()\ → \scaler.pkl\
+- LightGBM : `pickle.dump()` → `lgbm_model.pkl`
+- LSTM : `model.save()` → `lstm_model.keras`
+- Scaler : `pickle.dump()` → `scaler.pkl`
 
 ## 📈 Validation en Production
 
@@ -139,7 +139,7 @@ model.fit(X_train_lstm, y_train, epochs=10, batch_size=32)
 
 Les prédictions sont ajustées selon les caractéristiques de chaque quartier :
 
-\\\python
+```python
 QUARTIER_ADJUSTMENT = {
     "Guédiawaye": 1.15,           # +15% risque
     "Pikine": 1.20,               # +20% risque (absent du training)
@@ -150,7 +150,7 @@ QUARTIER_ADJUSTMENT = {
     "Mermoz-Sacré-Cœur": 0.90,   # -10% risque
     "Dakar-Plateau": 0.85,        # -15% risque
 }
-\\\
+```
 
 ## ✅ Conclusion
 
