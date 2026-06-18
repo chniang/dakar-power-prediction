@@ -18,13 +18,8 @@ Le push sur `hf` déclenche un rebuild automatique du Space (Docker). Compter ~2
 
 ## Variables d'environnement (HF Space)
 
-Les secrets ne sont pas dans le code — les configurer dans :
-**HF Space → Settings → Variables and secrets**
-
-| Variable | Description |
-|---|---|
-| `SUPABASE_URL` | URL du projet Supabase |
-| `SUPABASE_KEY` | Clé anon Supabase |
+Aucun secret requis depuis v1.1.0 — l'intégration Supabase a été retirée.
+L'app fonctionne sans variable d'environnement supplémentaire.
 
 ## Modèles et données (Git LFS)
 
