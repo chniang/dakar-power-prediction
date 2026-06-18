@@ -118,10 +118,10 @@ streamlit run streamlit_app/app.py
 ```
 
 ### Utilisation
-1. **Onglet Prédiction** : Sélectionner quartier + saisir conditions météo → Obtenir le risque
-2. **Onglet Carte** : Visualiser tous les quartiers simultanément
-3. **Onglet Analytics** : Analyser statistiques et tendances
-4. **Export** : Télécharger les résultats en CSV
+1. **Onglet Prédiction** : Sélectionner quartier + saisir conditions météo → Obtenir le risque (+ bouton Export CSV)
+2. **Onglet Carte** : Visualiser tous les quartiers simultanément sur une carte interactive
+3. **Onglet Statistiques** : Analyser les taux de coupure historiques par quartier
+4. **Onglet Historique** : Explorer les tendances temporelles de consommation et de risque
 
 ---
 

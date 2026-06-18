@@ -2,6 +2,7 @@
 Configuration globale du projet Dakar Power Prediction
 VERSION FINALE - 8 quartiers
 """
+import os
 
 # ============================================================================
 # CHEMINS DES FICHIERS
