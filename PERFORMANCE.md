@@ -152,6 +152,18 @@ QUARTIER_ADJUSTMENT = {
 }
 ```
 
+## 📐 Métriques Finales (set de test, 14 000 exemples)
+
+| Métrique | LightGBM | LSTM | Ensemble (moyen) |
+|----------|----------|------|-----------------|
+| Accuracy | 84 % | 84 % | 84 % |
+| Precision | 45 % | 46 % | ~45 % |
+| Recall | 60 % | 60 % | 60 % |
+| F1-score | 0.52 | 0.52 | 0.52 |
+| AUC-ROC | 0.87 | 0.87 | 0.87 |
+
+**Seuil de décision** : 0.25 (au lieu du défaut 0.5) — calibré pour maximiser le recall sur la classe minoritaire (coupures = 14 % du dataset). À ce seuil, le modèle détecte 60 % des vraies coupures contre 30 % avec le seuil par défaut.
+
 ## ✅ Conclusion
 
 Les modèles LightGBM et LSTM ont été :

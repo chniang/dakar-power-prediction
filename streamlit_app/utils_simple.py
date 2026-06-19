@@ -24,6 +24,9 @@ warnings.filterwarnings('ignore', category=UserWarning, module='lightgbm')
 from src.config import (QUARTIERS_DAKAR, COORDONNEES_QUARTIERS, QUARTIER_ADJUSTMENT,
                         classify_risk, RISK_THRESHOLDS, RISK_FLOOR)
 
+# Seuil de décision optimal (déterminé sur set de test : recall 60%, F1 0.52)
+PREDICTION_THRESHOLD = 0.25
+
 logger = logging.getLogger(__name__)
 
 @st.cache_resource
@@ -98,6 +101,11 @@ def make_prediction_single(models, quartier, temp, humidite, vent, conso, time_f
         else:
             pred_lstm = pred_lgb
         risque_base = (pred_lgb + pred_lstm) / 2
+        # Recalibration : prob=THRESHOLD → 50 % affiché
+        scale = 0.5 / PREDICTION_THRESHOLD
+        risque_base = min(100.0, risque_base * scale)
+        pred_lgb  = min(100.0, pred_lgb  * scale)
+        pred_lstm = min(100.0, pred_lstm * scale)
         adjustment = QUARTIER_ADJUSTMENT.get(quartier, 1.0)
         risque_ajuste = max(RISK_FLOOR, risque_base * adjustment)
         pred_lgb = np.clip(pred_lgb, 0, 100)
@@ -122,9 +130,13 @@ def compute_map_risks(models, temperature, humidite, vitesse_vent, consommation,
     ]
     X = np.tile(feature_row, (len(QUARTIERS_DAKAR), 1))
     X_scaled = scaler.transform(X)
-    preds_lgb = lgb_model.predict(X_scaled) * 100
+    scale = 0.5 / PREDICTION_THRESHOLD
+    preds_lgb = np.clip(lgb_model.predict(X_scaled) * 100 * scale, 0, 100)
     if lstm_model is not None:
-        preds_lstm = lstm_model.predict(X_scaled.reshape(len(QUARTIERS_DAKAR), 1, -1), verbose=0).flatten() * 100
+        preds_lstm = np.clip(
+            lstm_model.predict(X_scaled.reshape(len(QUARTIERS_DAKAR), 1, -1), verbose=0).flatten() * 100 * scale,
+            0, 100
+        )
     else:
         preds_lstm = preds_lgb.copy()
     risque_base = (preds_lgb + preds_lstm) / 2
