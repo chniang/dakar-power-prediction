@@ -116,7 +116,7 @@ cd dakar-power-prediction
 # Installer les dépendances
 pip install -r requirements.txt
 
-# Lancer l'application
+# Lancer l'application (http://localhost:7860, port fixé dans .streamlit/config.toml)
 streamlit run streamlit_app/app.py
 ```
 

@@ -12,7 +12,7 @@ Dakar Power Prediction is a Streamlit web app that predicts electricity outage r
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the Streamlit app (default port 8501)
+# Run the Streamlit app (port 7860, set in .streamlit/config.toml — same as Docker/HF Spaces)
 streamlit run streamlit_app/app.py
 
 # Retrain models from the local CSV (takes 10–15 min due to LSTM)
@@ -26,7 +26,7 @@ python src/data_generator.py
 
 ```bash
 docker build -t dakar-power .
-docker run -p 8501:8501 dakar-power
+docker run -p 7860:7860 dakar-power
 ```
 
 The Dockerfile installs `libgomp1` (required by LightGBM on Linux) before installing Python deps.
