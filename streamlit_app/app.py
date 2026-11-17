@@ -298,6 +298,7 @@ with tab4:
             fig_risk = create_risk_trend_chart(df_hist, quartier_hist)
             if fig_risk:
                 st.plotly_chart(fig_risk, use_container_width=True)
+            st.caption("ℹ️ Taux moyen journalier sur 24 h. Les seuils MOYEN et ÉLEVÉ s'appliquent au risque d'une heure précise, donc une moyenne journalière atteint rarement ÉLEVÉ.")
 
         st.markdown("---")
         st.subheader("🌤️ Prévisions Météo 7 Jours")
