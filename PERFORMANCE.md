@@ -1,5 +1,7 @@
 ﻿# Rapport de Performance - Dakar Power Prediction
 
+> ⚠️ **Données synthétiques : démonstration technique, pas des mesures du réseau SENELEC.** Toutes les métriques ci-dessous sont mesurées sur des données générées artificiellement.
+
 **Date de documentation** : 2025-12-26 22:38:32
 
 ## 📊 Modèles Déployés
@@ -8,7 +10,7 @@
 - **Framework** : LightGBM
 - **Type** : Gradient Boosting Decision Tree
 - **Fichier** : `models/lgbm_model.pkl`
-- **Statut** : ✅ Entraîné et validé
+- **Statut** : ✅ Entraîné et évalué sur données synthétiques
 
 **Configuration** :
 - Nombre d'estimateurs : 100
@@ -24,7 +26,7 @@
 - **Framework** : TensorFlow/Keras
 - **Type** : Réseau de neurones récurrent (LSTM)
 - **Fichier** : `models/lstm_model.keras`
-- **Statut** : ✅ Entraîné et validé
+- **Statut** : ✅ Entraîné et évalué sur données synthétiques
 
 **Architecture** :
 - Couches LSTM : 2 couches (LSTM 64 units → Dropout 0.2 → LSTM 32 units → Dropout 0.2)
@@ -35,7 +37,7 @@
 **Validation** :
 - Métrique : Accuracy (classification binaire)
 - Ensemble de test : 20% des données (~14 000 enregistrements)
-- Performance : Capture patterns temporels complexes
+- Performance : voir le tableau de métriques (entrée à un seul pas de temps : pas de modélisation temporelle réelle)
 
 ### Modèle Ensemble
 - **Méthode** : Moyenne simple des prédictions LightGBM et LSTM
@@ -48,7 +50,7 @@
 - **Taille totale** : 70 000 enregistrements
 - **Split** : 80% train (56 000) / 20% test (14 000)
 - **Quartiers** : 8 zones de Dakar
-- **Période** : Données synthétiques représentatives
+- **Période** : Données synthétiques (non représentatives d'un réseau réel mesuré)
 
 ### Features (Variables d'entrée)
 1. **Météorologiques**
@@ -120,11 +122,11 @@ model.fit(X_train_lstm, y_train, epochs=10, batch_size=32)
 - LSTM : `model.save()` → `lstm_model.keras`
 - Scaler : `pickle.dump()` → `scaler.pkl`
 
-## 📈 Validation en Production
+## 📈 Vérifications fonctionnelles de l'application
 
 ### Tests réalisés
 - ✅ Chargement des modèles dans l'application Streamlit
-- ✅ Prédictions en temps réel fonctionnelles
+- ✅ Prédictions instantanées fonctionnelles (à partir des curseurs)
 - ✅ Visualisations (jauge, carte, graphiques)
 - ✅ Export des résultats en CSV
 - ✅ Interface utilisateur responsive
@@ -132,7 +134,7 @@ model.fit(X_train_lstm, y_train, epochs=10, batch_size=32)
 ### Cas de test
 - ✅ Prédiction pour un quartier (risque FAIBLE/MOYEN/ÉLEVÉ)
 - ✅ Prédiction pour tous les quartiers simultanément
-- ✅ Analyse historique et tendances
+- ✅ Exploration du dataset synthétique
 - ✅ Statistiques comparatives par quartier
 
 ## 📊 Ajustements par Quartier
@@ -168,9 +170,8 @@ QUARTIER_ADJUSTMENT = {
 
 Les modèles LightGBM et LSTM ont été :
 - ✅ **Entraînés** sur 70 000 enregistrements
-- ✅ **Validés** sur ensemble de test indépendant
+- ✅ **Évalués** sur un jeu de test synthétique
 - ✅ **Déployés** dans l'application Streamlit
-- ✅ **Testés** en conditions réelles
 - ✅ **Optimisés** avec ajustements par quartier
 
 L'application est **opérationnelle** et prête pour démonstration académique.

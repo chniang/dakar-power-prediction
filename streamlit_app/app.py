@@ -67,7 +67,7 @@ if st.sidebar.button("🌤️ Météo actuelle Dakar", use_container_width=True)
         st.sidebar.error("❌ API météo indisponible")
 
 if 'wx_time' in st.session_state:
-    st.sidebar.caption(f"⏱️ Données météo en temps réel — {st.session_state['wx_time']}")
+    st.sidebar.caption(f"⏱️ Météo Open-Meteo relevée à {st.session_state['wx_time']} (seule donnée réelle de l'app)")
 
 _sc = SLIDER_CONFIG
 temperature  = st.sidebar.slider("Température (°C)",  _sc['temperature']['min'],  _sc['temperature']['max'],  _sc['temperature']['default'],  _sc['temperature']['step'],  key='s_temp')
@@ -101,13 +101,15 @@ Application de prédiction des coupures d'électricité à Dakar.
 - 🧠 LSTM
 
 **Données :**
-- 70,000 enregistrements
+- 70 000 enregistrements **synthétiques**
 - 8 quartiers
+- Aucune mesure réelle du réseau
 """)
 st.sidebar.markdown("---")
 st.sidebar.caption("⚡ Version 1.0")
 
 st.title("⚡ Dakar Power Prediction")
+st.warning("⚠️ **Données synthétiques : démonstration technique, pas des mesures du réseau SENELEC.**")
 
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -117,7 +119,7 @@ with col2:
 with col3:
     st.success(f"✅ CSV ({len(df_hist):,} lignes)" if df_hist is not None else "❌ CSV")
 
-tab1, tab2, tab3, tab4 = st.tabs(["🎯 Prédiction", "🗺️ Carte", "📊 Statistiques", "📈 Historique"])
+tab1, tab2, tab3, tab4 = st.tabs(["🎯 Prédiction", "🗺️ Carte", "📊 Statistiques", "📈 Tendances"])
 
 with tab1:
     st.header("🎯 Prédiction Immédiate")
@@ -188,7 +190,7 @@ with tab2:
 with tab3:
     st.header("📊 Statistiques CSV")
     if df_hist is not None:
-        # Métriques globales SENELEC
+        # Métriques globales du dataset synthétique
         m1, m2, m3, m4 = st.columns(4)
         q_max = df_hist.groupby('quartier')['coupure'].mean().idxmax()
         with m1:
@@ -231,7 +233,7 @@ with tab3:
                 height=350, margin=dict(t=10),
             )
             st.plotly_chart(fig_h, use_container_width=True)
-            st.caption("⚡ Le pic 18-22h correspond aux heures de pointe du réseau SENELEC (données historiques)")
+            st.caption("ℹ️ Dataset synthétique : le pic 18-22h reflète la règle de génération des données, pas une mesure du réseau.")
         with col2:
             st.subheader("📅 Risque par Mois")
             by_month = df_hist.groupby('mois')['coupure'].mean() * 100
@@ -247,7 +249,7 @@ with tab3:
             st.caption("ℹ️ Dataset synthétique 2023-2024 : les pics de Déc/Fév reflètent la distribution des données d'entraînement, pas nécessairement la saisonnalité réelle.")
 
 with tab4:
-    st.header("📈 Historique")
+    st.header("📈 Tendances du dataset synthétique")
     if df_hist is not None:
         quartier_hist = st.selectbox("Quartier", ["Tous"] + QUARTIERS_DAKAR, index=0, key='hist_q')
         col1, col2 = st.columns(2)

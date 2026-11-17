@@ -9,6 +9,9 @@ pinned: false
 # ⚡ Dakar Power Prediction
 ### Système de Prédiction des Coupures d'Électricité à Dakar par Machine Learning
 
+> ⚠️ **Données synthétiques : démonstration technique, pas des mesures du réseau SENELEC.**
+> Les 70 000 enregistrements utilisés pour entraîner et évaluer les modèles sont générés artificiellement. Seule la météo (Open-Meteo) est réelle.
+
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red.svg)](https://streamlit.io/)
 [![CI](https://github.com/chniang/dakar-power-prediction/actions/workflows/ci.yml/badge.svg)](https://github.com/chniang/dakar-power-prediction/actions)
@@ -21,16 +24,16 @@ pinned: false
 
 Les délestages électriques sont un défi majeur à Dakar, impactant quotidiennement les ménages, commerces et services publics. L'absence d'outil prédictif empêche les citoyens et gestionnaires de réseaux d'anticiper ces coupures et d'adapter leurs activités.
 
-**Objectif du projet :** Développer un système de prédiction intelligent capable d'anticiper les risques de coupure d'électricité dans 8 quartiers stratégiques de Dakar, en fonction des conditions météorologiques et de la consommation.
+**Objectif du projet :** Démontrer, sur données synthétiques, la chaîne technique d'un système capable d'anticiper les risques de coupure d'électricité dans 8 quartiers stratégiques de Dakar, en fonction des conditions météorologiques et de la consommation.
 
 ---
 
 ## 🎯 SOLUTION DÉVELOPPÉE
 
 Application web interactive permettant de :
-- **Prédire en temps réel** le risque de coupure (0-100%) pour chaque quartier
+- **Estimer instantanément** un risque de coupure pour chaque quartier, à partir de conditions saisies (modèle entraîné sur données synthétiques)
 - **Visualiser géographiquement** les zones à risque sur une carte interactive
-- **Analyser les tendances** de consommation et de coupures par quartier
+- **Explorer le dataset synthétique** (consommation et coupures par quartier)
 - **Exporter les données** pour reporting et analyses complémentaires
 
 **Zones couvertes :** Guédiawaye, Parcelles Assainies, Sicap-Liberté, Yoff, Mermoz-Sacré-Cœur, Dakar-Plateau *(données d'entraînement)*, Pikine et Fann *(estimations par ajustement géographique)*
@@ -57,7 +60,7 @@ J'ai développé un **système d'ensemble combinant 2 algorithmes** pour maximis
 
 ### Dataset
 
-- **70 000 enregistrements** de données synthétiques réalistes (6 quartiers entraînés)
+- **70 000 enregistrements** de données synthétiques, générées par des règles simplifiées non validées sur le terrain (6 quartiers entraînés)
 - **Features principales :** Température, Humidité, Vitesse du vent, Consommation électrique, Heure, Jour, Mois, Saison, Heure de pointe
 - **Target :** Présence ou absence de coupure (binaire)
 
@@ -83,7 +86,7 @@ J'ai développé un **système d'ensemble combinant 2 algorithmes** pour maximis
 
 ## 📊 RÉSULTATS CLÉS
 
-✅ **Modèles validés** sur données synthétiques (split 80/20)  
+✅ **Modèles évalués** sur données synthétiques uniquement (split 80/20) — aucune validation sur données réelles  
 ✅ **Temps de prédiction : <1 seconde** pour les 8 quartiers  
 ✅ **Interface responsive** accessible sur desktop et mobile  
 ✅ **Export CSV** pour intégration dans systèmes de reporting  
@@ -120,8 +123,8 @@ streamlit run streamlit_app/app.py
 ### Utilisation
 1. **Onglet Prédiction** : Sélectionner quartier + saisir conditions météo → Obtenir le risque (+ bouton Export CSV)
 2. **Onglet Carte** : Visualiser tous les quartiers simultanément sur une carte interactive
-3. **Onglet Statistiques** : Analyser les taux de coupure historiques par quartier
-4. **Onglet Historique** : Explorer les tendances temporelles de consommation et de risque
+3. **Onglet Statistiques** : Taux de coupure par quartier dans le dataset synthétique
+4. **Onglet Tendances** : Évolution de la consommation et des coupures dans le dataset synthétique, plus les prévisions météo réelles à 7 jours
 
 ---
 
@@ -140,8 +143,8 @@ streamlit run streamlit_app/app.py
 
 ## 🔮 AMÉLIORATIONS FUTURES
 
-- [ ] Intégration données réelles SENELEC pour réentraînement
-- [x] ✅ Données météo temps réel via Open-Meteo API (déjà intégré)
+- [ ] Réentraînement sur données réelles (ex. journaux d'indisponibilité, annonces de délestage) — prérequis avant tout usage opérationnel
+- [x] ✅ Météo actuelle et prévisions via Open-Meteo API (déjà intégré)
 - [ ] Ajout de notifications push pour alertes en temps réel
 - [ ] Extension à d'autres villes du Sénégal (Thiès, Saint-Louis)
 - [ ] Module de recommandations personnalisées (ex: meilleur moment pour utiliser électroménagers)

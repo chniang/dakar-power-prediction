@@ -2,6 +2,11 @@
 
 Tous les changements notables de ce projet seront documentés dans ce fichier.
 
+## [Non publié]
+
+### Corrigé
+- Formulations laissant croire à des données réelles (app, README, PERFORMANCE, CHANGELOG, docstrings) ; bandeau « Données synthétiques » ajouté dans l'app et le README
+
 ## [1.1.0] - 2026-06-17
 
 ### Corrigé
@@ -23,10 +28,10 @@ Tous les changements notables de ce projet seront documentés dans ce fichier.
 ### Ajouté
 - Application Streamlit complète
 - Modèles LightGBM et LSTM
-- Prédiction en temps réel
+- Prédiction instantanée à partir des curseurs (modèles entraînés sur données synthétiques)
 - Carte interactive des risques
-- Analyse statistique par quartier
-- Historique et tendances
+- Analyse statistique par quartier (dataset synthétique)
+- Tendances du dataset synthétique
 - Export CSV des prédictions
 - Documentation complète
 - Tests et validation

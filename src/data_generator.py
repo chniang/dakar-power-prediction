@@ -3,11 +3,15 @@ Fichier : src/data_generator.py
 Générateur de Données Synthétiques avec Hiérarchie de Risque
 ============================================================
 
-Ce générateur crée des données réalistes avec:
+Ce générateur crée des données ARTIFICIELLES à partir de règles simplifiées
+(non calibrées sur des mesures du réseau SENELEC) :
 - Pondération par quartier (Guediawaye plus risqué)
 - Patterns temporels (heures de pointe, saisons)
-- Corrélations réalistes entre features
-- Export direct vers Supabase
+- Corrélations choisies à la main entre features
+- Export CSV vers data/raw/raw_data.csv
+
+ATTENTION : ce script n'est PAS celui qui a produit data/synthetic/synthetic_data_v2.csv
+(utilisé pour l'entraînement). Voir docs/DATA.md.
 
 Auteur : Cheikh Niang
 Date : Décembre 2025
@@ -121,7 +125,7 @@ def is_peak_hour(hour: int) -> bool:
 
 def generate_temperature(month: int, hour: int, quartier_config: Dict) -> float:
     """
-    Génère une température réaliste pour Dakar.
+    Génère une température synthétique (règle simplifiée) pour Dakar.
     
     Args:
         month: Mois (1-12)
