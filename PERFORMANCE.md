@@ -144,11 +144,11 @@ Les prédictions sont ajustées selon les caractéristiques de chaque quartier :
 ```python
 QUARTIER_ADJUSTMENT = {
     "Guédiawaye": 1.15,           # +15% risque
-    "Pikine": 1.20,               # +20% risque (absent du training)
+    "Pikine": 1.20,               # +20% risque
     "Parcelles Assainies": 1.10,  # +10% risque
     "Sicap-Liberté": 1.05,        # +5% risque
     "Yoff": 1.00,                 # référence
-    "Fann": 0.95,                 # -5% risque (absent du training)
+    "Fann": 0.95,                 # -5% risque
     "Mermoz-Sacré-Cœur": 0.90,   # -10% risque
     "Dakar-Plateau": 0.85,        # -15% risque
 }

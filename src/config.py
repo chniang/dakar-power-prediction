@@ -18,12 +18,12 @@ SYNTHETIC_DIR = 'data/synthetic/'
 QUARTIERS_DAKAR = [
     'Guédiawaye',
     'Parcelles Assainies',
-    'Pikine',            # ATTENTION : absent des données d'entraînement (data_generator.py)
+    'Pikine',
     'Sicap-Liberté',
     'Yoff',
     'Mermoz-Sacré-Cœur',
     'Dakar-Plateau',
-    'Fann'              # ATTENTION : absent des données d'entraînement (data_generator.py)
+    'Fann'
 ]
 
 # ============================================================================
@@ -43,17 +43,20 @@ COORDONNEES_QUARTIERS = {
 
 # ============================================================================
 # AJUSTEMENTS PAR QUARTIER (facteur de risque)
+# Le quartier n'est PAS une feature du modèle : ce coefficient est appliqué
+# après inférence. Les 8 quartiers sont présents dans synthetic_data_v2.csv ;
+# les valeurs suivent le ratio (taux de coupure du quartier / taux moyen 14,05 %).
 # ============================================================================
 
 QUARTIER_ADJUSTMENT = {
     'Guédiawaye': 1.15,
     'Parcelles Assainies': 1.10,
-    'Pikine': 1.20,             # ATTENTION : absent des données d'entraînement
+    'Pikine': 1.20,
     'Sicap-Liberté': 1.05,
     'Yoff': 1.00,
     'Mermoz-Sacré-Cœur': 0.90,
     'Dakar-Plateau': 0.85,
-    'Fann': 0.95                # ATTENTION : absent des données d'entraînement
+    'Fann': 0.95
 }
 
 RISK_THRESHOLDS = {'faible': 40, 'eleve': 70}

@@ -6,6 +6,8 @@ Tous les changements notables de ce projet seront documentés dans ce fichier.
 
 ### Corrigé
 - Formulations laissant croire à des données réelles (app, README, PERFORMANCE, CHANGELOG, docstrings) ; bandeau « Données synthétiques » ajouté dans l'app et le README
+- Fausse affirmation « Pikine/Fann absents de l'entraînement » : les 8 quartiers sont dans le CSV
+- « 6 quartiers entraînés » → 8 ; prérequis Python 3.9+ → 3.10+ (syntaxe `dict | None`)
 
 ## [1.1.0] - 2026-06-17
 
@@ -37,7 +39,7 @@ Tous les changements notables de ce projet seront documentés dans ce fichier.
 - Tests et validation
 
 ### Fonctionnalités
-- Prédiction pour 8 quartiers de Dakar (6 entraînés + Pikine/Fann par ajustement géographique)
+- Prédiction pour 8 quartiers de Dakar (tous présents dans le dataset ; quartier appliqué par coefficient, pas comme feature)
 - Dataset de 70 000 enregistrements synthétiques
 - Interface utilisateur intuitive
 - Visualisations interactives Plotly

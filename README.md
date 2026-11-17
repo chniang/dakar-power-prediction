@@ -12,8 +12,8 @@ pinned: false
 > ⚠️ **Données synthétiques : démonstration technique, pas des mesures du réseau SENELEC.**
 > Les 70 000 enregistrements utilisés pour entraîner et évaluer les modèles sont générés artificiellement. Seule la météo (Open-Meteo) est réelle.
 
-[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red.svg)](https://streamlit.io/)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.40-red.svg)](https://streamlit.io/)
 [![CI](https://github.com/chniang/dakar-power-prediction/actions/workflows/ci.yml/badge.svg)](https://github.com/chniang/dakar-power-prediction/actions)
 [![HF Spaces](https://img.shields.io/badge/🤗%20HF%20Spaces-Live-blue)](https://huggingface.co/spaces/TIJAANI/dakar-power-prediction)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -36,7 +36,7 @@ Application web interactive permettant de :
 - **Explorer le dataset synthétique** (consommation et coupures par quartier)
 - **Exporter les données** pour reporting et analyses complémentaires
 
-**Zones couvertes :** Guédiawaye, Parcelles Assainies, Sicap-Liberté, Yoff, Mermoz-Sacré-Cœur, Dakar-Plateau *(données d'entraînement)*, Pikine et Fann *(estimations par ajustement géographique)*
+**Zones couvertes :** Guédiawaye, Parcelles Assainies, Pikine, Sicap-Liberté, Yoff, Mermoz-Sacré-Cœur, Dakar-Plateau, Fann — les 8 quartiers sont présents dans le dataset synthétique. Le quartier n'est pas une variable du modèle : il est appliqué par un coefficient multiplicateur après prédiction.
 
 ---
 
@@ -48,7 +48,6 @@ J'ai développé un **système d'ensemble combinant 2 algorithmes** pour maximis
 
 1. **LightGBM** (Gradient Boosting)
    - Traitement rapide des features tabulaires
-   - Gestion native des variables catégorielles
 
 2. **LSTM** (Deep Learning - Réseau de Neurones Récurrent, 2 couches)
    - Capture des interactions entre features
@@ -60,7 +59,7 @@ J'ai développé un **système d'ensemble combinant 2 algorithmes** pour maximis
 
 ### Dataset
 
-- **70 000 enregistrements** de données synthétiques, générées par des règles simplifiées non validées sur le terrain (6 quartiers entraînés)
+- **70 000 enregistrements** de données synthétiques, générées par des règles simplifiées non validées sur le terrain (8 quartiers)
 - **Features principales :** Température, Humidité, Vitesse du vent, Consommation électrique, Heure, Jour, Mois, Saison, Heure de pointe
 - **Target :** Présence ou absence de coupure (binaire)
 
@@ -94,8 +93,8 @@ J'ai développé un **système d'ensemble combinant 2 algorithmes** pour maximis
 
 ### Patterns observés dans les données synthétiques
 
-- **Guédiawaye** présente le facteur de risque le plus élevé parmi les quartiers entraînés
-- **Corrélation** entre pics de consommation (18-21h, 7-9h) et risques de délestage
+- **Pikine** (16,9 %) et **Guédiawaye** (16,2 %) ont les taux de coupure les plus élevés, **Dakar-Plateau** le plus bas (11,5 %)
+- Les coupures sont concentrées sur **18h-22h** (≈ 44 % contre ≈ 6 % hors pointe) ; aucun pic le matin dans ce dataset
 
 ---
 
@@ -103,7 +102,7 @@ J'ai développé un **système d'ensemble combinant 2 algorithmes** pour maximis
 
 ### Prérequis
 ```bash
-Python 3.9+
+Python 3.10+
 pip
 ```
 

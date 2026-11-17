@@ -185,7 +185,7 @@ with tab2:
         df_res['Niveau'] = df_res['Risque'].apply(classify_risk)
         df_res['Risque'] = df_res['Risque'].apply(lambda x: f"{x:.1f}%")
         st.dataframe(df_res, use_container_width=True, hide_index=True)
-        st.caption("⚠️ Pikine et Fann : estimations basées sur ajustement géographique uniquement — absents des données d'entraînement.")
+        st.caption("ℹ️ Le quartier n'est pas une variable du modèle : le risque de base est le même partout, puis multiplié par un coefficient par quartier tiré des taux du dataset synthétique.")
 
 with tab3:
     st.header("📊 Statistiques CSV")
