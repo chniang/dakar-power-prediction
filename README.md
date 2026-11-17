@@ -86,6 +86,7 @@ J'ai développé un **système d'ensemble combinant 2 algorithmes** pour maximis
 ## 📊 RÉSULTATS CLÉS
 
 ✅ **Modèles évalués** sur données synthétiques uniquement (split 80/20) — aucune validation sur données réelles  
+📐 **AUC-ROC 0,87** (LightGBM et LSTM) ; exactitude 87,4 % contre 85,95 % pour un modèle qui répond toujours « pas de coupure » — détail dans [PERFORMANCE.md](PERFORMANCE.md)  
 ✅ **Temps de prédiction : <1 seconde** pour les 8 quartiers  
 ✅ **Interface responsive** accessible sur desktop et mobile  
 ✅ **Export CSV** pour intégration dans systèmes de reporting  

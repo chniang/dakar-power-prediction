@@ -8,6 +8,7 @@ Tous les changements notables de ce projet seront documentés dans ce fichier.
 - Formulations laissant croire à des données réelles (app, README, PERFORMANCE, CHANGELOG, docstrings) ; bandeau « Données synthétiques » ajouté dans l'app et le README
 - Fausse affirmation « Pikine/Fann absents de l'entraînement » : les 8 quartiers sont dans le CSV
 - « 6 quartiers entraînés » → 8 ; prérequis Python 3.9+ → 3.10+ (syntaxe `dict | None`)
+- PERFORMANCE.md et conclusion du notebook 02 : chiffres inventés (AUC ~0,93, F1 ~0,55, classe ~8 %) et configuration erronée remplacés par les métriques mesurées, avec la référence « jamais de coupure » et le biais lié à l'usage du test pour l'arrêt anticipé
 
 ## [1.1.0] - 2026-06-17
 

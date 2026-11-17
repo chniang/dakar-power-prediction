@@ -2,181 +2,108 @@
 
 > ⚠️ **Données synthétiques : démonstration technique, pas des mesures du réseau SENELEC.** Toutes les métriques ci-dessous sont mesurées sur des données générées artificiellement.
 
-**Date de documentation** : 2025-12-26 22:38:32
+**Dernière mesure des métriques** : 2026-11-17 (modèles de `models/` rechargés et évalués sur le jeu de test)
 
 ## 📊 Modèles Déployés
 
 ### LightGBM (Gradient Boosting)
-- **Framework** : LightGBM
-- **Type** : Gradient Boosting Decision Tree
-- **Fichier** : `models/lgbm_model.pkl`
+- **Fichier** : `models/lgbm_model.pkl` (`lgb.Booster`, entraîné par `scripts/2_train_models.py`)
 - **Statut** : ✅ Entraîné et évalué sur données synthétiques
 
-**Configuration** :
-- Nombre d'estimateurs : 100
-- Profondeur maximale : 5
-- Learning rate : Optimisé automatiquement
-
-**Validation** :
-- Métrique : Accuracy (classification binaire)
-- Ensemble de test : 20% des données (~14 000 enregistrements)
-- Performance : Validée sur données synthétiques
+**Configuration réelle** (`lgb.train`) :
+- `objective='binary'`, `num_leaves=31`, `learning_rate=0.05`
+- `feature_fraction=0.9`, `bagging_fraction=0.8`, `bagging_freq=5`
+- 100 itérations maximum, arrêt anticipé (patience 10) → **90 arbres** retenus
 
 ### LSTM (Deep Learning)
-- **Framework** : TensorFlow/Keras
-- **Type** : Réseau de neurones récurrent (LSTM)
 - **Fichier** : `models/lstm_model.keras`
 - **Statut** : ✅ Entraîné et évalué sur données synthétiques
 
-**Architecture** :
-- Couches LSTM : 2 couches (LSTM 64 units → Dropout 0.2 → LSTM 32 units → Dropout 0.2)
-- Fonction d'activation : Sigmoid (sortie binaire)
-- Optimiseur : Adam
-- Loss : Binary crossentropy
-
-**Validation** :
-- Métrique : Accuracy (classification binaire)
-- Ensemble de test : 20% des données (~14 000 enregistrements)
-- Performance : voir le tableau de métriques (entrée à un seul pas de temps : pas de modélisation temporelle réelle)
+**Architecture réelle** :
+- LSTM(64, `return_sequences=True`) → Dropout(0.2) → LSTM(32) → Dropout(0.2) → Dense(16, ReLU) → Dense(1, sigmoid)
+- Adam, `binary_crossentropy`, 50 epochs maximum, `batch_size=32`, arrêt anticipé (patience 5, meilleurs poids restaurés)
+- Entrée de forme `(1, 1, 9)` : un seul pas de temps, donc pas de modélisation temporelle réelle
 
 ### Modèle Ensemble
-- **Méthode** : Moyenne simple des prédictions LightGBM et LSTM
-- **Ajustement** : Facteur de correction par quartier
-- **Normalisation** : StandardScaler pour features numériques
+- **Méthode** : Moyenne simple des probabilités LightGBM et LSTM
+- **Ajustement** : Coefficient par quartier appliqué après prédiction (le quartier n'est pas une feature)
+- **Normalisation** : StandardScaler ajusté sur la partie entraînement uniquement
 
 ## 📁 Dataset
 
-### Caractéristiques
-- **Taille totale** : 70 000 enregistrements
-- **Split** : 80% train (56 000) / 20% test (14 000)
-- **Quartiers** : 8 zones de Dakar
-- **Période** : Données synthétiques (non représentatives d'un réseau réel mesuré)
+- **Fichier** : `data/synthetic/synthetic_data_v2.csv` — 70 000 lignes, 8 quartiers, dates 01/2023 → 06/2024
+- **Split** : 80 % train (56 000) / 20 % test (14 000), stratifié, `random_state=42`
+- **Taux de coupure** : 14,05 %
+- Détails et limites : voir [`docs/DATA.md`](docs/DATA.md)
 
-### Features (Variables d'entrée)
-1. **Météorologiques**
-   - Température (°C) : 15-45
-   - Humidité (%) : 30-100
-   - Vent (km/h) : 0-50
-
-2. **Consommation**
-   - Consommation électrique (MW) : 400-1500
-
-3. **Temporelles**
-   - Heure de la journée (0-23)
-   - Jour de la semaine (0-6)
-   - Mois de l'année (1-12)
-   - Saison (0/1/2 — sèche fraîche/sèche chaude/pluies)
-   - Indicateur heure de pointe (0/1 — pic à 7-9h et 18-21h)
-
-4. **Ajustement post-prédiction**
-   - Facteur par quartier (QUARTIER_ADJUSTMENT) appliqué après inférence, pas une feature du modèle
+### Features (ordre du scaler)
+1. `temp_celsius`, `humidite_percent`, `vitesse_vent`, `conso_megawatt`
+2. `heure`, `jour_semaine`, `mois`
+3. `saison` — **binaire dans le CSV** : 1 = juin à août, 0 = reste de l'année
+4. `is_peak_hour` — **dans le CSV** : 1 de 18h à 22h inclus, 0 sinon
 
 ### Variable cible
-- **Coupure** : Binaire (0 = Pas de coupure, 1 = Coupure)
+- **Coupure** : binaire (0 = pas de coupure, 1 = coupure)
+
+## 📐 Métriques mesurées (jeu de test, 14 000 lignes, 1 967 coupures)
+
+| Modèle | AUC-ROC | PR-AUC | Seuil | Précision | Rappel | F1 | Matrice [[VN, FP], [FN, VP]] |
+|---|---|---|---|---|---|---|---|
+| LightGBM | 0,873 | 0,503 | 0,50 | 0,604 | 0,303 | 0,404 | [[11643, 390], [1371, 596]] |
+| LightGBM | | | 0,25 | 0,454 | 0,597 | 0,516 | [[10618, 1415], [792, 1175]] |
+| LSTM | 0,874 | 0,513 | 0,50 | 0,627 | 0,239 | 0,346 | [[11753, 280], [1497, 470]] |
+| LSTM | | | 0,25 | 0,456 | 0,601 | 0,519 | [[10623, 1410], [785, 1182]] |
+| Ensemble (moyenne) | 0,874 | 0,510 | 0,25 | 0,456 | 0,601 | 0,519 | [[10624, 1409], [785, 1182]] |
+| **Référence « jamais de coupure »** | 0,500 | — | — | — | 0 | 0 | [[12033, 0], [1967, 0]] |
+| Référence régression logistique | 0,842 | | | | | | |
+
+**Exactitude (accuracy)** : LightGBM 87,4 % au seuil 0,5, contre **85,95 %** pour la référence « jamais de coupure ». Le gain d'exactitude est donc de 1,5 point seulement ; l'AUC et le rappel sont des indicateurs plus parlants.
+
+### Ce que le modèle apprend
+- Importance (gain LightGBM) : `is_peak_hour` 51 %, `humidite_percent` 24 %, `conso_megawatt` 12 %, `temp_celsius` 8 %, le reste < 3 %.
+- Taux de coupure : 43,6 % en heure de pointe contre 6,3 % hors pointe. À l'intérieur des heures de pointe, l'AUC tombe à 0,68.
+- Le LSTM n'apporte pas de gain mesurable par rapport à LightGBM.
+
+### ⚠️ Biais optimiste connu
+Le jeu de test **n'est pas strictement indépendant** : il a servi
+- à l'arrêt anticipé de LightGBM (`valid_sets=[test_data]`),
+- à l'arrêt anticipé du LSTM (`validation_data=test`, meilleurs poids restaurés),
+- au choix du seuil 0,25.
+
+Les chiffres ci-dessus surestiment donc légèrement la performance attendue sur des données nouvelles. Correction prévue : découpage train / validation / test.
 
 ## 🎯 Niveaux de Risque
 
-Le système classe les prédictions en 3 niveaux :
+| Niveau | Plage affichée |
+|--------|-------|
+| **FAIBLE** | 0-39 % |
+| **MOYEN** | 40-69 % |
+| **ÉLEVÉ** | 70-100 % |
 
-| Niveau | Plage | Interprétation |
-|--------|-------|----------------|
-| **FAIBLE** | 0-39% | Probabilité faible de coupure - Situation normale |
-| **MOYEN** | 40-69% | Probabilité modérée - Vigilance recommandée |
-| **ÉLEVÉ** | 70-100% | Probabilité élevée - Risque important de coupure |
-
-## 🔬 Méthodologie d'Entraînement
-
-### 1. Prétraitement
-```
-- Chargement du dataset (70 000 lignes)
-- Séparation features (X) / target (y)
-- Split train/test (80/20)
-- Normalisation avec StandardScaler (fit sur train)
-```
-
-### 2. Entraînement LightGBM
-```python
-lgb_model = LGBMClassifier(
-    n_estimators=100,
-    max_depth=5,
-    random_state=42
-)
-lgb_model.fit(X_train, y_train)
-```
-
-### 3. Entraînement LSTM
-```python
-model = Sequential([
-    LSTM(64, input_shape=(1, n_features), return_sequences=True),
-    Dropout(0.2),
-    LSTM(32),
-    Dropout(0.2),
-    Dense(1, activation='sigmoid')
-])
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-model.fit(X_train_lstm, y_train, epochs=10, batch_size=32)
-```
-
-### 4. Sauvegarde
-- LightGBM : `pickle.dump()` → `lgbm_model.pkl`
-- LSTM : `model.save()` → `lstm_model.keras`
-- Scaler : `pickle.dump()` → `scaler.pkl`
-
-## 📈 Vérifications fonctionnelles de l'application
-
-### Tests réalisés
-- ✅ Chargement des modèles dans l'application Streamlit
-- ✅ Prédictions instantanées fonctionnelles (à partir des curseurs)
-- ✅ Visualisations (jauge, carte, graphiques)
-- ✅ Export des résultats en CSV
-- ✅ Interface utilisateur responsive
-
-### Cas de test
-- ✅ Prédiction pour un quartier (risque FAIBLE/MOYEN/ÉLEVÉ)
-- ✅ Prédiction pour tous les quartiers simultanément
-- ✅ Exploration du dataset synthétique
-- ✅ Statistiques comparatives par quartier
+⚠️ Le score affiché est actuellement la probabilité de l'ensemble **multipliée par 2** puis plafonnée à 100 (« seuil 0,25 → 50 % »). Ce n'est donc pas une probabilité. Probabilité maximale observée sur le test : 0,72 (ensemble).
 
 ## 📊 Ajustements par Quartier
 
-Les prédictions sont ajustées selon les caractéristiques de chaque quartier :
+Coefficients appliqués après prédiction, cohérents avec le ratio (taux du quartier / taux moyen 14,05 %) dans le CSV :
 
-```python
-QUARTIER_ADJUSTMENT = {
-    "Guédiawaye": 1.15,           # +15% risque
-    "Pikine": 1.20,               # +20% risque
-    "Parcelles Assainies": 1.10,  # +10% risque
-    "Sicap-Liberté": 1.05,        # +5% risque
-    "Yoff": 1.00,                 # référence
-    "Fann": 0.95,                 # -5% risque
-    "Mermoz-Sacré-Cœur": 0.90,   # -10% risque
-    "Dakar-Plateau": 0.85,        # -15% risque
-}
-```
+| Quartier | Coefficient | Taux dans le CSV | Ratio mesuré |
+|---|---|---|---|
+| Pikine | 1,20 | 16,9 % | 1,20 |
+| Guédiawaye | 1,15 | 16,2 % | 1,15 |
+| Parcelles Assainies | 1,10 | 14,7 % | 1,05 |
+| Sicap-Liberté | 1,05 | 14,8 % | 1,05 |
+| Yoff | 1,00 | 13,5 % | 0,96 |
+| Fann | 0,95 | 12,9 % | 0,92 |
+| Mermoz-Sacré-Cœur | 0,90 | 12,0 % | 0,85 |
+| Dakar-Plateau | 0,85 | 11,5 % | 0,82 |
 
-## 📐 Métriques Finales (set de test, 14 000 exemples)
+## 📈 Vérifications fonctionnelles de l'application
 
-| Métrique | LightGBM | LSTM | Ensemble (moyen) |
-|----------|----------|------|-----------------|
-| Accuracy | 84 % | 84 % | 84 % |
-| Precision | 45 % | 46 % | ~45 % |
-| Recall | 60 % | 60 % | 60 % |
-| F1-score | 0.52 | 0.52 | 0.52 |
-| AUC-ROC | 0.87 | 0.87 | 0.87 |
-
-**Seuil de décision** : 0.25 (au lieu du défaut 0.5) — calibré pour maximiser le recall sur la classe minoritaire (coupures = 14 % du dataset). À ce seuil, le modèle détecte 60 % des vraies coupures contre 30 % avec le seuil par défaut.
+- ✅ Chargement des modèles dans l'application Streamlit
+- ✅ Prédictions instantanées (à partir des curseurs) pour un quartier et pour la carte
+- ✅ Visualisations (jauge, carte, graphiques) et export CSV
+- ✅ Exploration du dataset synthétique
 
 ## ✅ Conclusion
 
-Les modèles LightGBM et LSTM ont été :
-- ✅ **Entraînés** sur 70 000 enregistrements
-- ✅ **Évalués** sur un jeu de test synthétique
-- ✅ **Déployés** dans l'application Streamlit
-- ✅ **Optimisés** avec ajustements par quartier
-
-L'application est **opérationnelle** et prête pour démonstration académique.
-
----
-
-*Rapport généré le 2025-12-26 à 22:38:32*
-*Projet de fin de formation - Data Scientist Junior*
+Démonstrateur technique fonctionnel (pipeline, application, carte). Sur données synthétiques, le modèle atteint une AUC de 0,87, mais son apport par rapport à une règle « heure de pointe » est limité, et **aucune performance sur le réseau réel n'a été mesurée**. Un réentraînement sur données réelles est indispensable avant tout usage opérationnel.
