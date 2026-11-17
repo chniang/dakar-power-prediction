@@ -15,6 +15,7 @@ Tous les changements notables de ce projet seront documentés dans ce fichier.
 
 ### Ajouté
 - Avertissement « hors plage d'entraînement » (barre latérale, prédiction, carte) quand une entrée sort des plages du CSV, y compris une consommation incohérente avec l'heure de pointe (ex. 800 MW à 19h, valeur par défaut) ; les sliders ne sont pas bloqués
+- Fiche de données `docs/DATA.md` : générateur d'origine introuvable, contenu du CSV, taux par quartier, règles observées, limites
 
 ## [1.1.0] - 2026-06-17
 

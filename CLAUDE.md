@@ -40,7 +40,7 @@ src/config.py               # Central config: quartier names, GPS coords, risk a
 src/data_generator.py       # Synthetic data generation with per-quartier risk profiles
 scripts/2_train_models.py   # Train LightGBM + LSTM, saves to models/
 models/                     # lgbm_model.pkl, lstm_model.keras, scaler.pkl (tracked via Git LFS)
-data/synthetic/synthetic_data_v2.csv  # Training dataset (Git LFS)
+data/synthetic/synthetic_data_v2.csv  # Training dataset (Git LFS) — generator script lost, see docs/DATA.md
 ```
 
 ### Prediction Pipeline

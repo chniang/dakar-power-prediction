@@ -59,7 +59,7 @@ J'ai développé un **système d'ensemble combinant 2 algorithmes** pour maximis
 
 ### Dataset
 
-- **70 000 enregistrements** de données synthétiques, générées par des règles simplifiées non validées sur le terrain (8 quartiers)
+- **70 000 enregistrements** de données synthétiques, générées par des règles simplifiées non validées sur le terrain (8 quartiers) — provenance, règles observées et limites : [docs/DATA.md](docs/DATA.md)
 - **Features principales :** Température, Humidité, Vitesse du vent, Consommation électrique, Heure, Jour, Mois, Saison, Heure de pointe
 - **Target :** Présence ou absence de coupure (binaire)
 
