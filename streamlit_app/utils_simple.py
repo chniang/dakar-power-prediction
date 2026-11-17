@@ -358,6 +358,38 @@ def create_temporal_chart(df_hist, quartier_filter):
         logger.warning(f"create_temporal_chart failed: {e}")
         return None
 
+def create_forecast_chart(forecast):
+    """Prévisions météo 7 jours : précipitations (axe gauche), températures (axe droit).
+    Légende horizontale sous le graphique pour ne pas chevaucher l'axe de droite."""
+    df_fc = pd.DataFrame(forecast)
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=df_fc['date'], y=df_fc['precipitation'],
+        name='Précipitations (mm)', marker_color='#3498db', opacity=0.6,
+    ))
+    fig.add_trace(go.Scatter(
+        x=df_fc['date'], y=df_fc['temp_max'],
+        mode='lines+markers', name='Temp max (°C)',
+        line=dict(color='#e74c3c', width=2), yaxis='y2',
+    ))
+    fig.add_trace(go.Scatter(
+        x=df_fc['date'], y=df_fc['temp_min'],
+        mode='lines+markers', name='Temp min (°C)',
+        line=dict(color='#2ecc71', width=2, dash='dot'), yaxis='y2',
+    ))
+    fig.update_layout(
+        title="Prévisions Météo Dakar — 7 prochains jours",
+        xaxis_title="Date",
+        yaxis=dict(title="Précipitations (mm)", range=[0, 20]),
+        yaxis2=dict(title="Température (°C)", overlaying='y', side='right', range=[20, 45]),
+        legend=dict(orientation='h', yanchor='top', y=-0.25, xanchor='center', x=0.5),
+        margin=dict(b=110),
+        hovermode='x unified',
+        height=450,
+    )
+    return fig
+
+
 def create_risk_trend_chart(df_hist, quartier_filter):
     if df_hist is None or len(df_hist) == 0 or 'coupure' not in df_hist.columns:
         return None

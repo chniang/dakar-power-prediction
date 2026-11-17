@@ -54,3 +54,25 @@ def test_dockerfile_desactive_la_traduction():
     dockerfile = (ROOT / 'Dockerfile').read_text(encoding='utf-8')
     assert '<html lang="fr" translate="no">' in dockerfile
     assert 'content="notranslate"' in dockerfile
+
+
+# ---------------------------------------------------------------------------
+# Graphique météo 7 jours : légende sous le graphique
+# ---------------------------------------------------------------------------
+
+from streamlit_app.utils_simple import create_forecast_chart
+
+FORECAST = [
+    {'date': f'2026-11-{17 + i}', 'temp_max': 30 + i, 'temp_min': 22, 'precipitation': 0.0, 'wind_max': 15}
+    for i in range(7)
+]
+
+
+def test_legende_meteo_horizontale_sous_le_graphique():
+    fig = create_forecast_chart(FORECAST)
+    legend = fig.layout.legend
+    assert legend.orientation == 'h'
+    assert legend.y < 0 and legend.yanchor == 'top'   # sous la zone de tracé, donc loin de l'axe de droite
+    assert fig.layout.margin.b >= 100                  # place réservée pour la légende
+    assert [t.name for t in fig.data] == ['Précipitations (mm)', 'Temp max (°C)', 'Temp min (°C)']
+    assert fig.layout.yaxis2.side == 'right'

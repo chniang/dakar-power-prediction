@@ -27,6 +27,7 @@ from streamlit_app.utils_simple import (
     format_risk,
     sync_conso_default,
     risk_message,
+    create_forecast_chart,
     NO_TRANSLATE_JS,
 )
 from src.config import QUARTIERS_DAKAR, classify_risk, RISK_THRESHOLDS, SLIDER_CONFIG, TRAINING_RANGES
@@ -304,31 +305,7 @@ with tab4:
         st.subheader("🌤️ Prévisions Météo 7 Jours")
         forecast = get_weather_forecast_7days()
         if forecast:
-            df_fc = pd.DataFrame(forecast)
-            fig_fc = go.Figure()
-            fig_fc.add_trace(go.Bar(
-                x=df_fc['date'], y=df_fc['precipitation'],
-                name='Précipitations (mm)', marker_color='#3498db', opacity=0.6,
-            ))
-            fig_fc.add_trace(go.Scatter(
-                x=df_fc['date'], y=df_fc['temp_max'],
-                mode='lines+markers', name='Temp max (°C)',
-                line=dict(color='#e74c3c', width=2), yaxis='y2',
-            ))
-            fig_fc.add_trace(go.Scatter(
-                x=df_fc['date'], y=df_fc['temp_min'],
-                mode='lines+markers', name='Temp min (°C)',
-                line=dict(color='#2ecc71', width=2, dash='dot'), yaxis='y2',
-            ))
-            fig_fc.update_layout(
-                title="Prévisions Météo Dakar — 7 prochains jours",
-                xaxis_title="Date",
-                yaxis=dict(title="Précipitations (mm)", range=[0, 20]),
-                yaxis2=dict(title="Température (°C)", overlaying='y', side='right', range=[20, 45]),
-                hovermode='x unified',
-                height=400,
-            )
-            st.plotly_chart(fig_fc, use_container_width=True)
+            st.plotly_chart(create_forecast_chart(forecast), use_container_width=True)
         else:
             st.info("🌐 Prévisions indisponibles (API météo)")
 
