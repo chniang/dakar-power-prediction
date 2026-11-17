@@ -78,7 +78,7 @@ heure_pred   = st.sidebar.slider(
     "🕐 Heure de prédiction", 0, 23,
     datetime.now().hour, 1,
     key='s_hour',
-    help="Changer l'heure affecte is_peak_hour (pic 7-9h et 18-21h)",
+    help="Changer l'heure affecte is_peak_hour (pointe 18h-22h, comme dans les données d'entraînement)",
 )
 quartier = st.sidebar.selectbox("Quartier", QUARTIERS_DAKAR, index=0)
 

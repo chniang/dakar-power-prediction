@@ -12,6 +12,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true  # le CSV d'entraînement (Git LFS) sert de référence aux tests d'encodage
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5

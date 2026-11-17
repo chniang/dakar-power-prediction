@@ -10,6 +10,7 @@ Tous les changements notables de ce projet seront documentés dans ce fichier.
 - « 6 quartiers entraînés » → 8 ; prérequis Python 3.9+ → 3.10+ (syntaxe `dict | None`)
 - PERFORMANCE.md et conclusion du notebook 02 : chiffres inventés (AUC ~0,93, F1 ~0,55, classe ~8 %) et configuration erronée remplacés par les métriques mesurées, avec la référence « jamais de coupure » et le biais lié à l'usage du test pour l'arrêt anticipé
 - Port unifié sur 7860 (Dockerfile, .streamlit/config.toml, CLAUDE.md) ; `.env.example` débarrassé des variables Supabase ; accent cassé du Dockerfile
+- **Inférence réalignée sur le CSV d'entraînement** : `saison` binaire (juin-août) et `is_peak_hour` 18h-22h. La « correction » 1.1.0 ci-dessous avait aligné l'app sur `data_generator.py` sans réentraîner, ce qui faussait les prédictions (ex. 22h ≈ 0 % au lieu d'environ 43 %). Tests réécrits pour comparer l'encodage aux valeurs du CSV
 
 ## [1.1.0] - 2026-06-17
 

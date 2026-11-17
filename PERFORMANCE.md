@@ -39,8 +39,10 @@
 ### Features (ordre du scaler)
 1. `temp_celsius`, `humidite_percent`, `vitesse_vent`, `conso_megawatt`
 2. `heure`, `jour_semaine`, `mois`
-3. `saison` — **binaire dans le CSV** : 1 = juin à août, 0 = reste de l'année
-4. `is_peak_hour` — **dans le CSV** : 1 de 18h à 22h inclus, 0 sinon
+3. `saison` — binaire : 1 = juin à août, 0 = reste de l'année
+4. `is_peak_hour` — 1 de 18h à 22h inclus, 0 sinon
+
+L'application encode ces deux features exactement comme le CSV (vérifié par `tests/test_features.py`). Entre le 17/06/2026 et cette correction, l'app utilisait un autre encodage (3 saisons, pointe 7-9h + 18-21h) : l'AUC mesurée avec cet encodage tombait à 0,834, et à 22h l'app affichait un risque quasi nul alors que le taux de coupure du dataset est de 43 %.
 
 ### Variable cible
 - **Coupure** : binaire (0 = pas de coupure, 1 = coupure)

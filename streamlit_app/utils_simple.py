@@ -29,6 +29,10 @@ PREDICTION_THRESHOLD = 0.25
 
 logger = logging.getLogger(__name__)
 
+# Encodage des features temporelles du CSV d'entraînement
+SAISON_MONTHS = (6, 7, 8)
+PEAK_HOUR_START, PEAK_HOUR_END = 18, 22
+
 @st.cache_resource
 def load_models_cached():
     models = {'lgb': None, 'lstm': None, 'scaler': None}
@@ -59,15 +63,11 @@ def load_models_cached():
 def create_time_features(date_time: datetime, hour_override: int = None) -> dict:
     hour = hour_override if hour_override is not None else date_time.hour
     month = date_time.month
-    # Encodage 3 saisons Dakar — doit correspondre exactement à data_generator.get_season()
-    if month in [11, 12, 1, 2]:
-        saison = 0  # Saison sèche fraîche
-    elif month in [3, 4, 5]:
-        saison = 1  # Saison sèche chaude
-    else:
-        saison = 2  # Saison des pluies (Jun-Oct)
-    # Heures de pointe — doit correspondre à data_generator.is_peak_hour()
-    is_peak_hour = 1 if (7 <= hour <= 9 or 18 <= hour <= 21) else 0
+    # Encodages calés sur data/synthetic/synthetic_data_v2.csv, sur lequel les modèles
+    # ont été entraînés (et NON sur data_generator.py, qui n'a pas produit ce CSV).
+    # Vérifié par tests/test_features.py contre les valeurs réelles du CSV.
+    saison = 1 if month in SAISON_MONTHS else 0          # 1 = juin-août, 0 = reste
+    is_peak_hour = 1 if PEAK_HOUR_START <= hour <= PEAK_HOUR_END else 0  # 18h-22h
     return {
         'hour': hour,
         'day_of_week': date_time.weekday(),

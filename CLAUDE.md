@@ -34,7 +34,7 @@ The Dockerfile installs `libgomp1` (required by LightGBM on Linux) before instal
 ## Architecture
 
 ```
-streamlit_app/app.py        # Entry point; sidebar controls, 4 tabs (Prédiction, Carte, Stats, Historique)
+streamlit_app/app.py        # Entry point; sidebar controls, 4 tabs (Prédiction, Carte, Statistiques, Tendances)
 streamlit_app/utils_simple.py  # All ML inference, chart creation, and model loading (@st.cache_resource)
 src/config.py               # Central config: quartier names, GPS coords, risk adjustments, model feature list
 src/data_generator.py       # Synthetic data generation with per-quartier risk profiles
@@ -68,5 +68,7 @@ The LSTM expects shape `(1, 1, 9)` — single sample, single timestep, 9 feature
 - Models must be loaded from the project root (paths like `'models/lgbm_model.pkl'`). Always run the app from the repo root.
 - LSTM is loaded with `compile=False` then recompiled manually to avoid Keras serialization compatibility issues.
 - The app degrades gracefully: if LSTM fails to load, LightGBM prediction is used for both model slots.
-- `saison` uses the 3-season Dakar encoding (0 = sèche fraîche Nov-Fév, 1 = sèche chaude Mar-Mai, 2 = pluies Jun-Oct) in both `data_generator.py` and `utils_simple.py`. Both must stay in sync.
-- `is_peak_hour` = 1 for hours 7–9 and 18–21 (matching `data_generator.is_peak_hour()`). Both files must stay in sync.
+- Inference encoding must match the **training CSV** (`data/synthetic/synthetic_data_v2.csv`), NOT `data_generator.py` (which did not produce that CSV and uses a different encoding — see `docs/DATA.md`):
+  - `saison` is binary: 1 = June–August, 0 = rest of the year (`SAISON_MONTHS` in `utils_simple.py`).
+  - `is_peak_hour` = 1 for hours 18–22 inclusive, 0 otherwise (`PEAK_HOUR_START/END`).
+  - `tests/test_features.py` checks this against the CSV values. If the CSV is regenerated with another encoding, retrain the models AND update `create_time_features()` in the same change.
