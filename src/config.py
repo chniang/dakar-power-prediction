@@ -79,6 +79,22 @@ SLIDER_CONFIG = {
     'consommation': {'min': 400.0, 'max': 1500.0, 'default': 800.0, 'step': 10.0},
 }
 
+# Plages observées dans synthetic_data_v2.csv (min / max arrondis vers l'extérieur).
+# Les sliders restent plus larges ; hors de ces plages, le modèle extrapole et
+# l'app affiche un avertissement « hors plage d'entraînement » (sans bloquer).
+TRAINING_RANGES = {
+    'temperature':  (16.0, 37.8),
+    'humidite':     (50.0, 95.0),
+    'vitesse_vent': (2.0, 20.0),
+    'consommation': (400.0, 1400.0),
+}
+# Dans le CSV, la consommation dépend de l'heure de pointe (18h-22h) :
+# >= 900 MW en pointe, < 900 MW hors pointe, sans aucun recouvrement.
+CONSO_RANGE_BY_PEAK = {
+    1: (900.0, 1400.0),
+    0: (400.0, 900.0),
+}
+
 # ============================================================================
 # CONFIGURATION MODÈLES ML
 # ============================================================================

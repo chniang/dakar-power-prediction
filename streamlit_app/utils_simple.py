@@ -22,7 +22,7 @@ warnings.filterwarnings('ignore', category=UserWarning, module='keras')
 warnings.filterwarnings('ignore', category=UserWarning, module='lightgbm')
 
 from src.config import (QUARTIERS_DAKAR, COORDONNEES_QUARTIERS, QUARTIER_ADJUSTMENT,
-                        classify_risk, RISK_THRESHOLDS)
+                        classify_risk, RISK_THRESHOLDS, TRAINING_RANGES, CONSO_RANGE_BY_PEAK)
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +72,29 @@ def create_time_features(date_time: datetime, hour_override: int = None) -> dict
         'saison': saison,
         'is_peak_hour': is_peak_hour,
     }
+
+def check_training_range(temperature, humidite, vitesse_vent, consommation, is_peak_hour):
+    """Liste des entrées hors de la plage vue à l'entraînement (vide si tout est dans la plage)."""
+    labels = {
+        'temperature': ('Température', temperature, '°C'),
+        'humidite': ('Humidité', humidite, '%'),
+        'vitesse_vent': ('Vent', vitesse_vent, 'km/h'),
+        'consommation': ('Consommation', consommation, 'MW'),
+    }
+    warnings_list = []
+    for key, (label, value, unit) in labels.items():
+        lo, hi = TRAINING_RANGES[key]
+        if not lo <= value <= hi:
+            warnings_list.append(f"{label} {value:g} {unit} hors plage d'entraînement ({lo:g}-{hi:g} {unit})")
+    lo, hi = CONSO_RANGE_BY_PEAK[int(is_peak_hour)]
+    in_global = TRAINING_RANGES['consommation'][0] <= consommation <= TRAINING_RANGES['consommation'][1]
+    if in_global and not lo <= consommation <= hi:
+        moment = "en heure de pointe (18h-22h)" if is_peak_hour else "hors heure de pointe"
+        warnings_list.append(
+            f"Consommation {consommation:g} MW jamais observée {moment} à l'entraînement ({lo:g}-{hi:g} MW)"
+        )
+    return warnings_list
+
 
 def _predict_probas_pct(models, X_scaled):
     """Probabilités brutes (en %) de LightGBM et du LSTM pour chaque ligne de X_scaled.

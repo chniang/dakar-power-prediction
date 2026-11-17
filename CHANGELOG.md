@@ -13,6 +13,9 @@ Tous les changements notables de ce projet seront documentés dans ce fichier.
 - **Inférence réalignée sur le CSV d'entraînement** : `saison` binaire (juin-août) et `is_peak_hour` 18h-22h. La « correction » 1.1.0 ci-dessous avait aligné l'app sur `data_generator.py` sans réentraîner, ce qui faussait les prédictions (ex. 22h ≈ 0 % au lieu d'environ 43 %). Tests réécrits pour comparer l'encodage aux valeurs du CSV
 - **Risque affiché = vraie probabilité** : suppression du « ×2 » et du plancher de 5 % ; coefficient de quartier appliqué avant le plafonnement ; seuils redéfinis à 15 % / 35 % sur la distribution du jeu de test (au lieu de 40 % / 70 %) ; un échec de LightGBM n'affiche plus un 50 % fictif
 
+### Ajouté
+- Avertissement « hors plage d'entraînement » (barre latérale, prédiction, carte) quand une entrée sort des plages du CSV, y compris une consommation incohérente avec l'heure de pointe (ex. 800 MW à 19h, valeur par défaut) ; les sliders ne sont pas bloqués
+
 ## [1.1.0] - 2026-06-17
 
 ### Corrigé

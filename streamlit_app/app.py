@@ -22,8 +22,9 @@ from streamlit_app.utils_simple import (
     create_bar_chart_quartiers,
     create_temporal_chart,
     create_risk_trend_chart,
+    check_training_range,
 )
-from src.config import QUARTIERS_DAKAR, classify_risk, RISK_THRESHOLDS, SLIDER_CONFIG
+from src.config import QUARTIERS_DAKAR, classify_risk, RISK_THRESHOLDS, SLIDER_CONFIG, TRAINING_RANGES
 from src.weather_api import get_current_weather_dakar, get_weather_forecast_7days
 
 st.set_page_config(page_title="Dakar Power", page_icon="⚡", layout="wide")
@@ -70,10 +71,13 @@ if 'wx_time' in st.session_state:
     st.sidebar.caption(f"⏱️ Météo Open-Meteo relevée à {st.session_state['wx_time']} (seule donnée réelle de l'app)")
 
 _sc = SLIDER_CONFIG
-temperature  = st.sidebar.slider("Température (°C)",  _sc['temperature']['min'],  _sc['temperature']['max'],  _sc['temperature']['default'],  _sc['temperature']['step'],  key='s_temp')
-humidite     = st.sidebar.slider("Humidité (%)",       _sc['humidite']['min'],     _sc['humidite']['max'],     _sc['humidite']['default'],     _sc['humidite']['step'],     key='s_hum')
-vitesse_vent = st.sidebar.slider("Vent (km/h)",        _sc['vitesse_vent']['min'], _sc['vitesse_vent']['max'], _sc['vitesse_vent']['default'], _sc['vitesse_vent']['step'], key='s_wind')
-consommation = st.sidebar.slider("Consommation (MW)",  _sc['consommation']['min'], _sc['consommation']['max'], _sc['consommation']['default'], _sc['consommation']['step'])
+_tr = TRAINING_RANGES
+def _range_help(key, unit):
+    return f"Plage vue à l'entraînement : {_tr[key][0]:g}-{_tr[key][1]:g} {unit}. Au-delà, le modèle extrapole."
+temperature  = st.sidebar.slider("Température (°C)",  _sc['temperature']['min'],  _sc['temperature']['max'],  _sc['temperature']['default'],  _sc['temperature']['step'],  key='s_temp', help=_range_help('temperature', '°C'))
+humidite     = st.sidebar.slider("Humidité (%)",       _sc['humidite']['min'],     _sc['humidite']['max'],     _sc['humidite']['default'],     _sc['humidite']['step'],     key='s_hum', help=_range_help('humidite', '%'))
+vitesse_vent = st.sidebar.slider("Vent (km/h)",        _sc['vitesse_vent']['min'], _sc['vitesse_vent']['max'], _sc['vitesse_vent']['default'], _sc['vitesse_vent']['step'], key='s_wind', help=_range_help('vitesse_vent', 'km/h'))
+consommation = st.sidebar.slider("Consommation (MW)",  _sc['consommation']['min'], _sc['consommation']['max'], _sc['consommation']['default'], _sc['consommation']['step'], help=_range_help('consommation', 'MW') + " En pointe (18h-22h) : 900-1400 MW ; hors pointe : 400-900 MW.")
 heure_pred   = st.sidebar.slider(
     "🕐 Heure de prédiction", 0, 23,
     datetime.now().hour, 1,
@@ -81,6 +85,15 @@ heure_pred   = st.sidebar.slider(
     help="Changer l'heure affecte is_peak_hour (pointe 18h-22h, comme dans les données d'entraînement)",
 )
 quartier = st.sidebar.selectbox("Quartier", QUARTIERS_DAKAR, index=0)
+
+def _warn_hors_plage(messages, consequence):
+    if messages:
+        details = "\n".join(f"- {m}" for m in messages)
+        st.warning(f"⚠️ **Hors plage d'entraînement** — {consequence} :\n\n{details}")
+
+_is_peak_now = create_time_features(datetime.now(), hour_override=heure_pred)['is_peak_hour']
+for _msg in check_training_range(temperature, humidite, vitesse_vent, consommation, _is_peak_now):
+    st.sidebar.warning(f"⚠️ {_msg}")
 
 if st.sidebar.button("🔮 Lancer la Prédiction", type="primary", use_container_width=True):
     st.session_state['run'] = True
@@ -126,6 +139,8 @@ with tab1:
     if st.session_state.get('run', False):
         params = st.session_state['params']
         time_features = create_time_features(params['timestamp'], hour_override=heure_pred)
+        _hors_plage = check_training_range(params['temperature'], params['humidite'], params['vitesse_vent'], params['consommation'], time_features['is_peak_hour'])
+        _warn_hors_plage(_hors_plage, "le modèle extrapole, résultat peu fiable")
         result = make_prediction_single(models, params['quartier'], params['temperature'], params['humidite'], params['vitesse_vent'], params['consommation'], time_features)
         
         if result:
@@ -180,6 +195,8 @@ with tab2:
 
     time_features_map = create_time_features(datetime.now(), hour_override=heure_pred)
     results = compute_map_risks(models, temperature, humidite, vitesse_vent, consommation, time_features_map)
+    _hors_plage_map = check_training_range(temperature, humidite, vitesse_vent, consommation, time_features_map['is_peak_hour'])
+    _warn_hors_plage(_hors_plage_map, "carte peu fiable")
     if results is None:
         st.error("Modèles non chargés — impossible de calculer la carte.")
     else:
