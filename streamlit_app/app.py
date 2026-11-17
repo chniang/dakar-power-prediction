@@ -1,5 +1,6 @@
 ﻿import logging
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -22,11 +23,19 @@ from streamlit_app.utils_simple import (
     create_bar_chart_quartiers,
     create_temporal_chart,
     create_risk_trend_chart,
+    check_training_range,
+    format_risk,
+    sync_conso_default,
+    risk_message,
+    create_forecast_chart,
+    NO_TRANSLATE_JS,
 )
-from src.config import QUARTIERS_DAKAR, classify_risk, RISK_THRESHOLDS, SLIDER_CONFIG
+from src.config import QUARTIERS_DAKAR, classify_risk, RISK_THRESHOLDS, SLIDER_CONFIG, TRAINING_RANGES
 from src.weather_api import get_current_weather_dakar, get_weather_forecast_7days
 
 st.set_page_config(page_title="Dakar Power", page_icon="⚡", layout="wide")
+# Empêche la traduction automatique du navigateur (voir NO_TRANSLATE_JS)
+components.html(NO_TRANSLATE_JS, height=0)
 
 # Clear old session state
 if 'initialized' not in st.session_state:
@@ -67,20 +76,42 @@ if st.sidebar.button("🌤️ Météo actuelle Dakar", use_container_width=True)
         st.sidebar.error("❌ API météo indisponible")
 
 if 'wx_time' in st.session_state:
-    st.sidebar.caption(f"⏱️ Données météo en temps réel — {st.session_state['wx_time']}")
+    st.sidebar.caption(f"⏱️ Météo Open-Meteo relevée à {st.session_state['wx_time']} (seule donnée réelle de l'app)")
 
 _sc = SLIDER_CONFIG
-temperature  = st.sidebar.slider("Température (°C)",  _sc['temperature']['min'],  _sc['temperature']['max'],  _sc['temperature']['default'],  _sc['temperature']['step'],  key='s_temp')
-humidite     = st.sidebar.slider("Humidité (%)",       _sc['humidite']['min'],     _sc['humidite']['max'],     _sc['humidite']['default'],     _sc['humidite']['step'],     key='s_hum')
-vitesse_vent = st.sidebar.slider("Vent (km/h)",        _sc['vitesse_vent']['min'], _sc['vitesse_vent']['max'], _sc['vitesse_vent']['default'], _sc['vitesse_vent']['step'], key='s_wind')
-consommation = st.sidebar.slider("Consommation (MW)",  _sc['consommation']['min'], _sc['consommation']['max'], _sc['consommation']['default'], _sc['consommation']['step'])
+_tr = TRAINING_RANGES
+def _range_help(key, unit):
+    return f"Plage vue à l'entraînement : {_tr[key][0]:g}-{_tr[key][1]:g} {unit}. Au-delà, le modèle extrapole."
+temperature  = st.sidebar.slider("Température (°C)",  _sc['temperature']['min'],  _sc['temperature']['max'],  _sc['temperature']['default'],  _sc['temperature']['step'],  key='s_temp', help=_range_help('temperature', '°C'))
+humidite     = st.sidebar.slider("Humidité (%)",       _sc['humidite']['min'],     _sc['humidite']['max'],     _sc['humidite']['default'],     _sc['humidite']['step'],     key='s_hum', help=_range_help('humidite', '%'))
+vitesse_vent = st.sidebar.slider("Vent (km/h)",        _sc['vitesse_vent']['min'], _sc['vitesse_vent']['max'], _sc['vitesse_vent']['default'], _sc['vitesse_vent']['step'], key='s_wind', help=_range_help('vitesse_vent', 'km/h'))
+# Consommation par défaut selon l'heure (1 100 MW en pointe, 600 MW sinon) : initialisée au
+# premier affichage, puis remise à jour quand l'heure bascule entre pointe et hors pointe.
+if 's_hour' not in st.session_state:
+    st.session_state['s_hour'] = datetime.now().hour
+sync_conso_default(st.session_state)
+consommation = st.sidebar.slider(
+    "Consommation (MW)", min_value=_sc['consommation']['min'], max_value=_sc['consommation']['max'],
+    step=_sc['consommation']['step'], key='s_conso',
+    help=_range_help('consommation', 'MW') + " En pointe (18h-22h) : 900-1400 MW ; hors pointe : 400-900 MW. "
+         "Valeur par défaut ajustée à l'heure choisie.",
+)
 heure_pred   = st.sidebar.slider(
     "🕐 Heure de prédiction", 0, 23,
-    datetime.now().hour, 1,
+    step=1,
     key='s_hour',
-    help="Changer l'heure affecte is_peak_hour (pic 7-9h et 18-21h)",
+    help="Changer l'heure affecte is_peak_hour (pointe 18h-22h, comme dans les données d'entraînement)",
 )
 quartier = st.sidebar.selectbox("Quartier", QUARTIERS_DAKAR, index=0)
+
+def _warn_hors_plage(messages, consequence):
+    if messages:
+        details = "\n".join(f"- {m}" for m in messages)
+        st.warning(f"⚠️ **Hors plage d'entraînement** — {consequence} :\n\n{details}")
+
+_is_peak_now = create_time_features(datetime.now(), hour_override=heure_pred)['is_peak_hour']
+for _msg in check_training_range(temperature, humidite, vitesse_vent, consommation, _is_peak_now):
+    st.sidebar.warning(f"⚠️ {_msg}")
 
 if st.sidebar.button("🔮 Lancer la Prédiction", type="primary", use_container_width=True):
     st.session_state['run'] = True
@@ -101,13 +132,15 @@ Application de prédiction des coupures d'électricité à Dakar.
 - 🧠 LSTM
 
 **Données :**
-- 70,000 enregistrements
+- 70 000 enregistrements **synthétiques**
 - 8 quartiers
+- Aucune mesure réelle du réseau
 """)
 st.sidebar.markdown("---")
 st.sidebar.caption("⚡ Version 1.0")
 
 st.title("⚡ Dakar Power Prediction")
+st.warning("⚠️ **Données synthétiques : démonstration technique, pas des mesures du réseau SENELEC.**")
 
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -117,13 +150,15 @@ with col2:
 with col3:
     st.success(f"✅ CSV ({len(df_hist):,} lignes)" if df_hist is not None else "❌ CSV")
 
-tab1, tab2, tab3, tab4 = st.tabs(["🎯 Prédiction", "🗺️ Carte", "📊 Statistiques", "📈 Historique"])
+tab1, tab2, tab3, tab4 = st.tabs(["🎯 Prédiction", "🗺️ Carte", "📊 Statistiques", "📈 Tendances"])
 
 with tab1:
     st.header("🎯 Prédiction Immédiate")
     if st.session_state.get('run', False):
         params = st.session_state['params']
         time_features = create_time_features(params['timestamp'], hour_override=heure_pred)
+        _hors_plage = check_training_range(params['temperature'], params['humidite'], params['vitesse_vent'], params['consommation'], time_features['is_peak_hour'])
+        _warn_hors_plage(_hors_plage, "le modèle extrapole, résultat peu fiable")
         result = make_prediction_single(models, params['quartier'], params['temperature'], params['humidite'], params['vitesse_vent'], params['consommation'], time_features)
         
         if result:
@@ -140,18 +175,19 @@ with tab1:
             
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("🌳 LightGBM", f"{pred_lgb:.1f}%")
+                st.metric("🌳 LightGBM (hors quartier)", format_risk(pred_lgb))
             with col2:
-                st.metric("🧠 LSTM", f"{pred_lstm:.1f}%")
+                st.metric("🧠 LSTM (hors quartier)", format_risk(pred_lstm))
             with col3:
                 st.metric("⚠️ NIVEAU", niveau)
             
-            if risque < RISK_THRESHOLDS['faible']:
-                st.success(f"✅ Risque {niveau} ({risque:.0f}%)")
-            elif risque < RISK_THRESHOLDS['eleve']:
-                st.warning(f"⚠️ Risque {niveau} ({risque:.0f}%)")
-            else:
-                st.error(f"🚨 Risque {niveau} ({risque:.0f}%)")
+            _kind, _texte = risk_message(risque)
+            getattr(st, _kind)(_texte)
+            st.caption(
+                f"Probabilité de coupure estimée par le modèle (moyenne LightGBM/LSTM × coefficient du quartier). "
+                f"Niveaux : FAIBLE < {RISK_THRESHOLDS['faible']} %, MOYEN < {RISK_THRESHOLDS['eleve']} %, ÉLEVÉ au-delà. "
+                f"Sur le jeu de test synthétique, le taux réel de coupure est de 2,5 % / 22 % / 51,5 % dans ces trois niveaux."
+            )
             
             if st.session_state.get('predictions_history'):
                 df_export = pd.DataFrame(st.session_state['predictions_history'])
@@ -173,6 +209,8 @@ with tab2:
 
     time_features_map = create_time_features(datetime.now(), hour_override=heure_pred)
     results = compute_map_risks(models, temperature, humidite, vitesse_vent, consommation, time_features_map)
+    _hors_plage_map = check_training_range(temperature, humidite, vitesse_vent, consommation, time_features_map['is_peak_hour'])
+    _warn_hors_plage(_hors_plage_map, "carte peu fiable")
     if results is None:
         st.error("Modèles non chargés — impossible de calculer la carte.")
     else:
@@ -181,14 +219,14 @@ with tab2:
         st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
         df_res = pd.DataFrame(results).sort_values('Risque', ascending=False)
         df_res['Niveau'] = df_res['Risque'].apply(classify_risk)
-        df_res['Risque'] = df_res['Risque'].apply(lambda x: f"{x:.1f}%")
+        df_res['Risque'] = df_res['Risque'].apply(format_risk)
         st.dataframe(df_res, use_container_width=True, hide_index=True)
-        st.caption("⚠️ Pikine et Fann : estimations basées sur ajustement géographique uniquement — absents des données d'entraînement.")
+        st.caption("ℹ️ Le quartier n'est pas une variable du modèle : le risque de base est le même partout, puis multiplié par un coefficient par quartier tiré des taux du dataset synthétique.")
 
 with tab3:
     st.header("📊 Statistiques CSV")
     if df_hist is not None:
-        # Métriques globales SENELEC
+        # Métriques globales du dataset synthétique
         m1, m2, m3, m4 = st.columns(4)
         q_max = df_hist.groupby('quartier')['coupure'].mean().idxmax()
         with m1:
@@ -231,7 +269,7 @@ with tab3:
                 height=350, margin=dict(t=10),
             )
             st.plotly_chart(fig_h, use_container_width=True)
-            st.caption("⚡ Le pic 18-22h correspond aux heures de pointe du réseau SENELEC (données historiques)")
+            st.caption("ℹ️ Dataset synthétique : le pic 18-22h reflète la règle de génération des données, pas une mesure du réseau.")
         with col2:
             st.subheader("📅 Risque par Mois")
             by_month = df_hist.groupby('mois')['coupure'].mean() * 100
@@ -244,10 +282,10 @@ with tab3:
             ))
             fig_m.update_layout(xaxis_title="Mois", yaxis_title="Taux (%)", height=350, margin=dict(t=10))
             st.plotly_chart(fig_m, use_container_width=True)
-            st.caption("ℹ️ Dataset synthétique 2023-2024 : les pics de Déc/Fév reflètent la distribution des données d'entraînement, pas nécessairement la saisonnalité réelle.")
+            st.caption("ℹ️ Dataset synthétique 2023-2024 : les pics de Déc/Fév reflètent la distribution des données d'entraînement, pas la saisonnalité réelle du réseau.")
 
 with tab4:
-    st.header("📈 Historique")
+    st.header("📈 Tendances du dataset synthétique")
     if df_hist is not None:
         quartier_hist = st.selectbox("Quartier", ["Tous"] + QUARTIERS_DAKAR, index=0, key='hist_q')
         col1, col2 = st.columns(2)
@@ -261,36 +299,13 @@ with tab4:
             fig_risk = create_risk_trend_chart(df_hist, quartier_hist)
             if fig_risk:
                 st.plotly_chart(fig_risk, use_container_width=True)
+            st.caption("ℹ️ Taux moyen journalier sur 24 h. Les seuils MOYEN et ÉLEVÉ s'appliquent au risque d'une heure précise, donc une moyenne journalière atteint rarement ÉLEVÉ.")
 
         st.markdown("---")
         st.subheader("🌤️ Prévisions Météo 7 Jours")
         forecast = get_weather_forecast_7days()
         if forecast:
-            df_fc = pd.DataFrame(forecast)
-            fig_fc = go.Figure()
-            fig_fc.add_trace(go.Bar(
-                x=df_fc['date'], y=df_fc['precipitation'],
-                name='Précipitations (mm)', marker_color='#3498db', opacity=0.6,
-            ))
-            fig_fc.add_trace(go.Scatter(
-                x=df_fc['date'], y=df_fc['temp_max'],
-                mode='lines+markers', name='Temp max (°C)',
-                line=dict(color='#e74c3c', width=2), yaxis='y2',
-            ))
-            fig_fc.add_trace(go.Scatter(
-                x=df_fc['date'], y=df_fc['temp_min'],
-                mode='lines+markers', name='Temp min (°C)',
-                line=dict(color='#2ecc71', width=2, dash='dot'), yaxis='y2',
-            ))
-            fig_fc.update_layout(
-                title="Prévisions Météo Dakar — 7 prochains jours",
-                xaxis_title="Date",
-                yaxis=dict(title="Précipitations (mm)", range=[0, 20]),
-                yaxis2=dict(title="Température (°C)", overlaying='y', side='right', range=[20, 45]),
-                hovermode='x unified',
-                height=400,
-            )
-            st.plotly_chart(fig_fc, use_container_width=True)
+            st.plotly_chart(create_forecast_chart(forecast), use_container_width=True)
         else:
             st.info("🌐 Prévisions indisponibles (API météo)")
 

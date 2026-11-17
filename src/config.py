@@ -18,12 +18,12 @@ SYNTHETIC_DIR = 'data/synthetic/'
 QUARTIERS_DAKAR = [
     'Guédiawaye',
     'Parcelles Assainies',
-    'Pikine',            # ATTENTION : absent des données d'entraînement (data_generator.py)
+    'Pikine',
     'Sicap-Liberté',
     'Yoff',
     'Mermoz-Sacré-Cœur',
     'Dakar-Plateau',
-    'Fann'              # ATTENTION : absent des données d'entraînement (data_generator.py)
+    'Fann'
 ]
 
 # ============================================================================
@@ -43,21 +43,29 @@ COORDONNEES_QUARTIERS = {
 
 # ============================================================================
 # AJUSTEMENTS PAR QUARTIER (facteur de risque)
+# Le quartier n'est PAS une feature du modèle : ce coefficient est appliqué
+# après inférence. Les 8 quartiers sont présents dans synthetic_data_v2.csv ;
+# les valeurs suivent le ratio (taux de coupure du quartier / taux moyen 14,05 %).
 # ============================================================================
 
 QUARTIER_ADJUSTMENT = {
     'Guédiawaye': 1.15,
     'Parcelles Assainies': 1.10,
-    'Pikine': 1.20,             # ATTENTION : absent des données d'entraînement
+    'Pikine': 1.20,
     'Sicap-Liberté': 1.05,
     'Yoff': 1.00,
     'Mermoz-Sacré-Cœur': 0.90,
     'Dakar-Plateau': 0.85,
-    'Fann': 0.95                # ATTENTION : absent des données d'entraînement
+    'Fann': 0.95
 }
 
-RISK_THRESHOLDS = {'faible': 40, 'eleve': 70}
-RISK_FLOOR = 5.0
+# Seuils en % de probabilité (ensemble LightGBM + LSTM × coefficient de quartier).
+# Fixés sur la distribution réelle du jeu de test (14 000 lignes) :
+#   FAIBLE < 15 % : 61,4 % des cas, taux de coupure réel 2,5 % (sous le taux moyen de 14 %)
+#   MOYEN 15-35 % : 24,9 % des cas, taux de coupure réel 22,0 %
+#   ÉLEVÉ ≥ 35 %  : 13,7 % des cas, taux de coupure réel 51,5 % (coupure plus probable qu'improbable)
+# Le jeu de test ayant déjà servi à l'arrêt anticipé, ces chiffres sont légèrement optimistes.
+RISK_THRESHOLDS = {'faible': 15, 'eleve': 35}
 
 def classify_risk(score: float) -> str:
     if score < RISK_THRESHOLDS['faible']: return "FAIBLE"
@@ -68,7 +76,29 @@ SLIDER_CONFIG = {
     'temperature':  {'min': 15.0,  'max':   45.0, 'default': 25.0,  'step':  0.5},
     'humidite':     {'min': 30.0,  'max':  100.0, 'default': 65.0,  'step':  1.0},
     'vitesse_vent': {'min':  0.0,  'max':   50.0, 'default': 15.0,  'step':  1.0},
-    'consommation': {'min': 400.0, 'max': 1500.0, 'default': 800.0, 'step': 10.0},
+    'consommation': {'min': 400.0, 'max': 1500.0, 'step': 10.0},  # défaut : CONSO_DEFAULT_BY_PEAK
+}
+
+# Plages observées dans synthetic_data_v2.csv (min / max arrondis vers l'extérieur).
+# Les sliders restent plus larges ; hors de ces plages, le modèle extrapole et
+# l'app affiche un avertissement « hors plage d'entraînement » (sans bloquer).
+TRAINING_RANGES = {
+    'temperature':  (16.0, 37.8),
+    'humidite':     (50.0, 95.0),
+    'vitesse_vent': (2.0, 20.0),
+    'consommation': (400.0, 1400.0),
+}
+# Dans le CSV, la consommation dépend de l'heure de pointe (18h-22h) :
+# >= 900 MW en pointe, < 900 MW hors pointe, sans aucun recouvrement.
+CONSO_RANGE_BY_PEAK = {
+    1: (900.0, 1400.0),
+    0: (400.0, 900.0),
+}
+# Consommation par défaut du slider selon l'heure choisie (proche de la médiane du CSV :
+# 1 151 MW en pointe, 616 MW hors pointe).
+CONSO_DEFAULT_BY_PEAK = {
+    1: 1100.0,
+    0: 600.0,
 }
 
 # ============================================================================
