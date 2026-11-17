@@ -1,13 +1,13 @@
 """
 Génération automatique des captures d'écran — Dakar Power Prediction
-Cible : Space HF https://tijaani-dakar-power-prediction.hf.space/
+Cible : Space HF https://pythonmindset-dakar-power-prediction.hf.space/
 Usage  : python scripts/take_screenshots.py
 """
 import asyncio
 from pathlib import Path
 from playwright.async_api import async_playwright, TimeoutError as PWTimeout
 
-SPACE_URL  = "https://tijaani-dakar-power-prediction.hf.space/"
+SPACE_URL  = "https://pythonmindset-dakar-power-prediction.hf.space/"
 IMAGES_DIR = Path(__file__).parent.parent / "images"
 VIEWPORT   = {"width": 1920, "height": 1080}
 

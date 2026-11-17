@@ -15,7 +15,7 @@ pinned: false
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.40-red.svg)](https://streamlit.io/)
 [![CI](https://github.com/chniang/dakar-power-prediction/actions/workflows/ci.yml/badge.svg)](https://github.com/chniang/dakar-power-prediction/actions)
-[![HF Spaces](https://img.shields.io/badge/🤗%20HF%20Spaces-Live-blue)](https://huggingface.co/spaces/TIJAANI/dakar-power-prediction)
+[![HF Spaces](https://img.shields.io/badge/🤗%20HF%20Spaces-Live-blue)](https://huggingface.co/spaces/PythonMindset/dakar-power-prediction)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---

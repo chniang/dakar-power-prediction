@@ -2,7 +2,7 @@
 
 Ce projet a deux remotes :
 - `origin` → GitHub (`https://github.com/chniang/dakar-power-prediction.git`)
-- `hf` → Hugging Face Space (`https://huggingface.co/spaces/TIJAANI/dakar-power-prediction`)
+- `hf` → Hugging Face Space (`https://huggingface.co/spaces/PythonMindset/dakar-power-prediction`)
 
 ## Workflow standard
 
@@ -32,6 +32,6 @@ git lfs status
 
 ## Vérification post-déploiement
 
-1. Ouvrir le Space : https://huggingface.co/spaces/TIJAANI/dakar-power-prediction
+1. Ouvrir le Space : https://huggingface.co/spaces/PythonMindset/dakar-power-prediction
 2. Vérifier les 3 indicateurs en haut de l'app : LightGBM ✅, LSTM ✅/⚠️, CSV ✅
 3. Tester une prédiction sur un quartier
