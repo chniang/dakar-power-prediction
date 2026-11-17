@@ -153,6 +153,14 @@ def compute_map_risks(models, temperature, humidite, vitesse_vent, consommation,
         for q in QUARTIERS_DAKAR
     ]
 
+def format_risk(risque_pct):
+    """Texte affiché pour une probabilité en % : « < 1 % » sous 1 %, sinon une décimale.
+    Affichage uniquement : la valeur et le niveau de risque ne changent pas."""
+    if risque_pct < 1:
+        return "< 1 %"
+    return f"{risque_pct:.1f}%"
+
+
 def get_risk_color(risque_pct):
     if risque_pct < RISK_THRESHOLDS['faible']:
         return "#2ecc71"
@@ -166,11 +174,10 @@ def create_gauge_chart(risque, quartier):
     niveau = classify_risk(risque)
 
     fig = go.Figure(go.Indicator(
-        mode="gauge+number",
+        mode="gauge",  # valeur affichée en annotation pour gérer « < 1 % »
         value=risque,
         domain={'x': [0, 1], 'y': [0, 1]},
         title={'text': f"{quartier}", 'font': {'size': 20}},
-        number={'suffix': "%", 'valueformat': '.1f', 'font': {'size': 50}},
         gauge={
             'axis': {'range': [None, 100], 'tickwidth': 2},
             'bar': {'color': color, 'thickness': 0.75},
@@ -182,8 +189,14 @@ def create_gauge_chart(risque, quartier):
         }
     ))
     fig.add_annotation(
+        text=format_risk(risque),
+        x=0.5, y=0.32,
+        showarrow=False,
+        font=dict(size=46, color=color)
+    )
+    fig.add_annotation(
         text=f"<b>{niveau}</b>",
-        x=0.5, y=0.2,
+        x=0.5, y=0.08,
         showarrow=False,
         font=dict(size=28, color=color)
     )
@@ -200,7 +213,7 @@ def create_map(results):
             niveau = classify_risk(r)
             df_map.append({
                 'Quartier': quartier, 'Latitude': coords['lat'], 'Longitude': coords['lon'],
-                'Risque': r, 'Niveau': niveau
+                'Risque': r, 'Risque_txt': format_risk(r), 'Niveau': niveau
             })
     df_map = pd.DataFrame(df_map)
     df_map['Couleur'] = df_map['Risque'].apply(get_risk_color)
@@ -211,10 +224,10 @@ def create_map(results):
         lat=df_map['Latitude'], lon=df_map['Longitude'], mode='markers',
         marker=dict(size=df_map['Taille'], color=df_map['Couleur'], opacity=0.85),
         text=df_map['Quartier'],
-        customdata=df_map[['Risque', 'Niveau']],
+        customdata=df_map[['Risque_txt', 'Niveau']],
         hovertemplate=(
             '<b>%{text}</b><br>'
-            'Risque : %{customdata[0]:.1f}%<br>'
+            'Risque : %{customdata[0]}<br>'
             'Niveau : %{customdata[1]}<extra></extra>'
         ),
     ))

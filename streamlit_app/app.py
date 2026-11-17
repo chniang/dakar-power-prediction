@@ -23,6 +23,7 @@ from streamlit_app.utils_simple import (
     create_temporal_chart,
     create_risk_trend_chart,
     check_training_range,
+    format_risk,
 )
 from src.config import QUARTIERS_DAKAR, classify_risk, RISK_THRESHOLDS, SLIDER_CONFIG, TRAINING_RANGES
 from src.weather_api import get_current_weather_dakar, get_weather_forecast_7days
@@ -157,18 +158,18 @@ with tab1:
             
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("🌳 LightGBM (hors quartier)", f"{pred_lgb:.1f}%")
+                st.metric("🌳 LightGBM (hors quartier)", format_risk(pred_lgb))
             with col2:
-                st.metric("🧠 LSTM (hors quartier)", f"{pred_lstm:.1f}%")
+                st.metric("🧠 LSTM (hors quartier)", format_risk(pred_lstm))
             with col3:
                 st.metric("⚠️ NIVEAU", niveau)
             
             if risque < RISK_THRESHOLDS['faible']:
-                st.success(f"✅ Risque {niveau} ({risque:.1f}%)")
+                st.success(f"✅ Risque {niveau} ({format_risk(risque)})")
             elif risque < RISK_THRESHOLDS['eleve']:
-                st.warning(f"⚠️ Risque {niveau} ({risque:.1f}%)")
+                st.warning(f"⚠️ Risque {niveau} ({format_risk(risque)})")
             else:
-                st.error(f"🚨 Risque {niveau} ({risque:.1f}%)")
+                st.error(f"🚨 Risque {niveau} ({format_risk(risque)})")
             st.caption(
                 f"Probabilité de coupure estimée par le modèle (moyenne LightGBM/LSTM × coefficient du quartier). "
                 f"Niveaux : FAIBLE < {RISK_THRESHOLDS['faible']} %, MOYEN < {RISK_THRESHOLDS['eleve']} %, ÉLEVÉ au-delà. "
@@ -205,7 +206,7 @@ with tab2:
         st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
         df_res = pd.DataFrame(results).sort_values('Risque', ascending=False)
         df_res['Niveau'] = df_res['Risque'].apply(classify_risk)
-        df_res['Risque'] = df_res['Risque'].apply(lambda x: f"{x:.1f}%")
+        df_res['Risque'] = df_res['Risque'].apply(format_risk)
         st.dataframe(df_res, use_container_width=True, hide_index=True)
         st.caption("ℹ️ Le quartier n'est pas une variable du modèle : le risque de base est le même partout, puis multiplié par un coefficient par quartier tiré des taux du dataset synthétique.")
 

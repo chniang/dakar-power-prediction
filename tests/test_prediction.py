@@ -88,3 +88,33 @@ def test_carte_coherente_avec_prediction_unique():
     assert set(carte) == set(QUARTIERS_DAKAR)
     for q in QUARTIERS_DAKAR:
         assert carte[q] == pytest.approx(_predict(models, q)[2])
+
+
+# ---------------------------------------------------------------------------
+# Affichage « < 1 % »
+# ---------------------------------------------------------------------------
+
+from src.config import classify_risk
+from streamlit_app.utils_simple import format_risk, create_gauge_chart, create_map
+
+
+@pytest.mark.parametrize('valeur,texte', [
+    (0.0, "< 1 %"), (0.1, "< 1 %"), (0.99, "< 1 %"), (1.0, "1.0%"), (42.06, "42.1%"),
+])
+def test_format_risk(valeur, texte):
+    assert format_risk(valeur) == texte
+
+
+def test_affichage_ne_change_ni_valeur_ni_niveau():
+    _, _, risque = _predict(_models(0.001, 0.001), 'Yoff')
+    assert risque == pytest.approx(0.1)          # valeur calculée inchangée
+    assert classify_risk(risque) == "FAIBLE"
+    fig = create_gauge_chart(risque, 'Yoff')
+    assert fig.data[0].value == pytest.approx(0.1)  # la jauge garde la vraie valeur
+    assert "< 1 %" in [a.text for a in fig.layout.annotations]
+
+
+def test_carte_affiche_moins_de_1_pourcent():
+    fig = create_map([{'Quartier': 'Yoff', 'Risque': 0.3}, {'Quartier': 'Pikine', 'Risque': 42.0}])
+    textes = [row[0] for row in fig.data[0].customdata]
+    assert textes == ["< 1 %", "42.0%"]
