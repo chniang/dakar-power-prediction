@@ -76,13 +76,19 @@ Les chiffres ci-dessus surestiment donc légèrement la performance attendue sur
 
 ## 🎯 Niveaux de Risque
 
-| Niveau | Plage affichée |
-|--------|-------|
-| **FAIBLE** | 0-39 % |
-| **MOYEN** | 40-69 % |
-| **ÉLEVÉ** | 70-100 % |
+Le risque affiché est la **probabilité brute** de l'ensemble (moyenne LightGBM/LSTM), multipliée par le coefficient du quartier, puis bornée à 100 %. Aucun rééchelonnement ni plancher. Cette probabilité est bien calibrée sur le test : moyenne prédite 14,1 %, taux réel 14,05 %, écart ≤ 1,6 point par décile.
 
-⚠️ Le score affiché est actuellement la probabilité de l'ensemble **multipliée par 2** puis plafonnée à 100 (« seuil 0,25 → 50 % »). Ce n'est donc pas une probabilité. Probabilité maximale observée sur le test : 0,72 (ensemble).
+Seuils fixés sur la distribution du jeu de test (14 000 lignes, coefficient de quartier appliqué) :
+
+| Niveau | Plage | Part des cas | Taux de coupure réel | Part des coupures captées |
+|--------|-------|---|---|---|
+| **FAIBLE** | < 15 % | 61,4 % | 2,5 % | 10,9 % |
+| **MOYEN** | 15-35 % | 24,9 % | 22,0 % | 38,8 % |
+| **ÉLEVÉ** | ≥ 35 % | 13,7 % | 51,5 % | 50,2 % |
+
+FAIBLE correspond à un risque inférieur au taux moyen (14 %) ; ÉLEVÉ à une coupure plus probable qu'improbable. Probabilité maximale observée : 0,72 avant coefficient, 0,84 après. Ces seuils ont été choisis sur le jeu de test, déjà utilisé pour l'arrêt anticipé : même réserve d'optimisme que pour les métriques.
+
+*Historique : jusqu'à cette correction, l'app multipliait la probabilité par 2 (« seuil 0,25 → 50 % »), plafonnait avant d'appliquer le coefficient, imposait un plancher de 5 % et classait à 40 / 70 %.*
 
 ## 📊 Ajustements par Quartier
 

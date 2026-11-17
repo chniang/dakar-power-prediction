@@ -142,18 +142,23 @@ with tab1:
             
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("🌳 LightGBM", f"{pred_lgb:.1f}%")
+                st.metric("🌳 LightGBM (hors quartier)", f"{pred_lgb:.1f}%")
             with col2:
-                st.metric("🧠 LSTM", f"{pred_lstm:.1f}%")
+                st.metric("🧠 LSTM (hors quartier)", f"{pred_lstm:.1f}%")
             with col3:
                 st.metric("⚠️ NIVEAU", niveau)
             
             if risque < RISK_THRESHOLDS['faible']:
-                st.success(f"✅ Risque {niveau} ({risque:.0f}%)")
+                st.success(f"✅ Risque {niveau} ({risque:.1f}%)")
             elif risque < RISK_THRESHOLDS['eleve']:
-                st.warning(f"⚠️ Risque {niveau} ({risque:.0f}%)")
+                st.warning(f"⚠️ Risque {niveau} ({risque:.1f}%)")
             else:
-                st.error(f"🚨 Risque {niveau} ({risque:.0f}%)")
+                st.error(f"🚨 Risque {niveau} ({risque:.1f}%)")
+            st.caption(
+                f"Probabilité de coupure estimée par le modèle (moyenne LightGBM/LSTM × coefficient du quartier). "
+                f"Niveaux : FAIBLE < {RISK_THRESHOLDS['faible']} %, MOYEN < {RISK_THRESHOLDS['eleve']} %, ÉLEVÉ au-delà. "
+                f"Sur le jeu de test synthétique, le taux réel de coupure est de 2,5 % / 22 % / 51,5 % dans ces trois niveaux."
+            )
             
             if st.session_state.get('predictions_history'):
                 df_export = pd.DataFrame(st.session_state['predictions_history'])

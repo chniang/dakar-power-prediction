@@ -22,10 +22,7 @@ warnings.filterwarnings('ignore', category=UserWarning, module='keras')
 warnings.filterwarnings('ignore', category=UserWarning, module='lightgbm')
 
 from src.config import (QUARTIERS_DAKAR, COORDONNEES_QUARTIERS, QUARTIER_ADJUSTMENT,
-                        classify_risk, RISK_THRESHOLDS, RISK_FLOOR)
-
-# Seuil de décision optimal (déterminé sur set de test : recall 60%, F1 0.52)
-PREDICTION_THRESHOLD = 0.25
+                        classify_risk, RISK_THRESHOLDS)
 
 logger = logging.getLogger(__name__)
 
@@ -76,51 +73,47 @@ def create_time_features(date_time: datetime, hour_override: int = None) -> dict
         'is_peak_hour': is_peak_hour,
     }
 
+def _predict_probas_pct(models, X_scaled):
+    """Probabilités brutes (en %) de LightGBM et du LSTM pour chaque ligne de X_scaled.
+    Si le LSTM est indisponible, LightGBM est utilisé pour les deux colonnes."""
+    preds_lgb = np.asarray(models['lgb'].predict(X_scaled), dtype=float) * 100
+    preds_lstm = preds_lgb.copy()
+    if models['lstm'] is not None:
+        try:
+            preds_lstm = models['lstm'].predict(
+                X_scaled.reshape(len(X_scaled), 1, -1), verbose=0
+            ).flatten().astype(float) * 100
+        except Exception as e:
+            logger.warning(f"LSTM prediction failed, falling back to LightGBM: {e}")
+    return preds_lgb, preds_lstm
+
+
+def apply_quartier_adjustment(proba_pct, quartier):
+    """Applique le coefficient de quartier à la probabilité (en %), PUIS borne à [0, 100]."""
+    return float(np.clip(proba_pct * QUARTIER_ADJUSTMENT.get(quartier, 1.0), 0, 100))
+
+
 def make_prediction_single(models, quartier, temp, humidite, vent, conso, time_features):
-    lgb_model = models['lgb']
-    lstm_model = models['lstm']
-    scaler = models['scaler']
-    if lgb_model is None or scaler is None:
+    """Retourne (proba LightGBM %, proba LSTM %, risque du quartier %).
+
+    Le risque est la moyenne des deux probabilités brutes (aucun rééchelonnement),
+    multipliée par le coefficient du quartier puis bornée à 100 %."""
+    if models['lgb'] is None or models['scaler'] is None:
         return None
     try:
         features = [temp, humidite, vent, conso, time_features['hour'], time_features['day_of_week'], time_features['month'], time_features['saison'], time_features['is_peak_hour']]
-        features_array = np.array([features])
-        features_scaled = scaler.transform(features_array)
-        try:
-            pred_lgb = float(lgb_model.predict(features_scaled)[0]) * 100
-        except Exception as e:
-            logger.error(f"LightGBM prediction failed: {e}")
-            pred_lgb = 50.0
-        if lstm_model is not None:
-            try:
-                features_lstm = features_scaled.reshape(1, 1, -1)
-                pred_lstm = float(lstm_model.predict(features_lstm, verbose=0)[0][0]) * 100
-            except Exception as e:
-                logger.warning(f"LSTM prediction failed, falling back to LightGBM: {e}")
-                pred_lstm = pred_lgb
-        else:
-            pred_lstm = pred_lgb
-        risque_base = (pred_lgb + pred_lstm) / 2
-        # Recalibration : prob=THRESHOLD → 50 % affiché
-        scale = 0.5 / PREDICTION_THRESHOLD
-        risque_base = min(100.0, risque_base * scale)
-        pred_lgb  = min(100.0, pred_lgb  * scale)
-        pred_lstm = min(100.0, pred_lstm * scale)
-        adjustment = QUARTIER_ADJUSTMENT.get(quartier, 1.0)
-        risque_ajuste = max(RISK_FLOOR, risque_base * adjustment)
-        pred_lgb = np.clip(pred_lgb, 0, 100)
-        pred_lstm = np.clip(pred_lstm, 0, 100)
-        risque_ajuste = np.clip(risque_ajuste, 0, 100)
-        return pred_lgb, pred_lstm, risque_ajuste
+        features_scaled = models['scaler'].transform(np.array([features]))
+        preds_lgb, preds_lstm = _predict_probas_pct(models, features_scaled)
+        pred_lgb, pred_lstm = float(preds_lgb[0]), float(preds_lstm[0])
+        risque = apply_quartier_adjustment((pred_lgb + pred_lstm) / 2, quartier)
+        return pred_lgb, pred_lstm, risque
     except Exception as e:
-        st.error(f"❌ Erreur: {e}")
+        logger.error(f"Prediction failed: {e}")
+        st.error(f"❌ Erreur de prédiction : {e}")
         return None
 
 def compute_map_risks(models, temperature, humidite, vitesse_vent, consommation, time_features):
-    lgb_model = models['lgb']
-    lstm_model = models['lstm']
-    scaler = models['scaler']
-    if lgb_model is None or scaler is None:
+    if models['lgb'] is None or models['scaler'] is None:
         return None
     feature_row = [
         temperature, humidite, vitesse_vent, consommation,
@@ -128,24 +121,13 @@ def compute_map_risks(models, temperature, humidite, vitesse_vent, consommation,
         time_features['month'], time_features['saison'],
         time_features['is_peak_hour'],
     ]
-    X = np.tile(feature_row, (len(QUARTIERS_DAKAR), 1))
-    X_scaled = scaler.transform(X)
-    scale = 0.5 / PREDICTION_THRESHOLD
-    preds_lgb = np.clip(lgb_model.predict(X_scaled) * 100 * scale, 0, 100)
-    if lstm_model is not None:
-        preds_lstm = np.clip(
-            lstm_model.predict(X_scaled.reshape(len(QUARTIERS_DAKAR), 1, -1), verbose=0).flatten() * 100 * scale,
-            0, 100
-        )
-    else:
-        preds_lstm = preds_lgb.copy()
-    risque_base = (preds_lgb + preds_lstm) / 2
+    X_scaled = models['scaler'].transform(np.array([feature_row]))
+    preds_lgb, preds_lstm = _predict_probas_pct(models, X_scaled)
+    # Le quartier n'est pas une feature : même probabilité de base pour tous
+    risque_base = float((preds_lgb[0] + preds_lstm[0]) / 2)
     return [
-        {
-            'Quartier': q,
-            'Risque': float(np.clip(max(RISK_FLOOR, risque_base[i] * QUARTIER_ADJUSTMENT.get(q, 1.0)), 0, 100)),
-        }
-        for i, q in enumerate(QUARTIERS_DAKAR)
+        {'Quartier': q, 'Risque': apply_quartier_adjustment(risque_base, q)}
+        for q in QUARTIERS_DAKAR
     ]
 
 def get_risk_color(risque_pct):
@@ -165,14 +147,14 @@ def create_gauge_chart(risque, quartier):
         value=risque,
         domain={'x': [0, 1], 'y': [0, 1]},
         title={'text': f"{quartier}", 'font': {'size': 20}},
-        number={'suffix': "%", 'font': {'size': 50}},
+        number={'suffix': "%", 'valueformat': '.1f', 'font': {'size': 50}},
         gauge={
             'axis': {'range': [None, 100], 'tickwidth': 2},
             'bar': {'color': color, 'thickness': 0.75},
             'steps': [
-                {'range': [0, 40], 'color': '#d4edda'},
-                {'range': [40, 70], 'color': '#fff3cd'},
-                {'range': [70, 100], 'color': '#f8d7da'}
+                {'range': [0, RISK_THRESHOLDS['faible']], 'color': '#d4edda'},
+                {'range': [RISK_THRESHOLDS['faible'], RISK_THRESHOLDS['eleve']], 'color': '#fff3cd'},
+                {'range': [RISK_THRESHOLDS['eleve'], 100], 'color': '#f8d7da'}
             ]
         }
     ))
@@ -325,8 +307,8 @@ def create_risk_trend_chart(df_hist, quartier_filter):
             customdata=df_daily[['niveau', 'coupures']],
             hovertemplate='<b>%{x}</b><br>Taux: %{y:.1f}%<br>Niveau: %{customdata[0]}<extra></extra>'
         ))
-        fig.add_hline(y=40, line_dash="dash", line_color="#ffc107", annotation_text="Seuil MOYEN")
-        fig.add_hline(y=70, line_dash="dash", line_color="#dc3545", annotation_text="Seuil ÉLEVÉ")
+        fig.add_hline(y=RISK_THRESHOLDS['faible'], line_dash="dash", line_color="#ffc107", annotation_text="Seuil MOYEN")
+        fig.add_hline(y=RISK_THRESHOLDS['eleve'], line_dash="dash", line_color="#dc3545", annotation_text="Seuil ÉLEVÉ")
         title = f"Tendance - {quartier_filter}" if quartier_filter != "Tous" else "Tendance"
         fig.update_layout(title=title, xaxis_title="Date", yaxis_title="Taux (%)", height=500)
         return fig

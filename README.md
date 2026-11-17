@@ -54,8 +54,8 @@ J'ai développé un **système d'ensemble combinant 2 algorithmes** pour maximis
    - Apprentissage de patterns complexes
 
 3. **Prédiction finale** : Moyenne simple des 2 modèles
-   - Risque exprimé en pourcentage (0-100%)
-   - Classification : FAIBLE (0-39%), MOYEN (40-69%), ÉLEVÉ (70-100%)
+   - Risque = probabilité moyenne des 2 modèles × coefficient du quartier (en %, sans rééchelonnement)
+   - Classification : FAIBLE (< 15 %), MOYEN (15-35 %), ÉLEVÉ (≥ 35 %) — sur le test synthétique, taux réel de coupure 2,5 % / 22 % / 51,5 %
 
 ### Dataset
 

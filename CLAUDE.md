@@ -47,8 +47,8 @@ data/synthetic/synthetic_data_v2.csv  # Training dataset (Git LFS)
 
 1. User sets weather/consumption inputs in sidebar → clicks "Lancer la Prédiction"
 2. `create_time_features()` extracts hour, weekday, month, season, is_peak_hour from `datetime.now()`
-3. `make_prediction_single()` builds a 9-feature vector, scales it with the stored `scaler.pkl`, runs LightGBM and LSTM independently, averages their outputs, then multiplies by a per-quartier `QUARTIER_ADJUSTMENT` factor (defined in `src/config.py`)
-4. Risk is clamped to 0–100%; classified as FAIBLE (<40%), MOYEN (40–69%), ÉLEVÉ (≥70%)
+3. `make_prediction_single()` builds a 9-feature vector, scales it with the stored `scaler.pkl`, runs LightGBM and LSTM independently, averages their raw probabilities (no rescaling), then multiplies by a per-quartier `QUARTIER_ADJUSTMENT` factor (defined in `src/config.py`) BEFORE clamping
+4. Risk is clamped to 0–100% (no floor); classified as FAIBLE (<15%), MOYEN (15–35%), ÉLEVÉ (≥35%) — `RISK_THRESHOLDS` in `src/config.py`, chosen on the test-set distribution (real outage rate 2.5% / 22% / 51.5% per level)
 
 ### Model Feature Order (must match scaler fit order)
 
