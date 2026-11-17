@@ -281,7 +281,7 @@ with tab3:
             ))
             fig_m.update_layout(xaxis_title="Mois", yaxis_title="Taux (%)", height=350, margin=dict(t=10))
             st.plotly_chart(fig_m, use_container_width=True)
-            st.caption("ℹ️ Dataset synthétique 2023-2024 : les pics de Déc/Fév reflètent la distribution des données d'entraînement, pas nécessairement la saisonnalité réelle.")
+            st.caption("ℹ️ Dataset synthétique 2023-2024 : les pics de Déc/Fév reflètent la distribution des données d'entraînement, pas la saisonnalité réelle du réseau.")
 
 with tab4:
     st.header("📈 Tendances du dataset synthétique")
