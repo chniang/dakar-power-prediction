@@ -66,8 +66,62 @@ def test_valeurs_hors_plage_signalees():
 
 
 def test_conso_incoherente_avec_l_heure():
-    # 800 MW en pointe : valeur par défaut des sliders, jamais vue à l'entraînement
+    # 800 MW en pointe : jamais vu à l'entraînement
     msgs = check_training_range(25, 80, 10, 800, is_peak_hour=1)
     assert len(msgs) == 1 and 'pointe' in msgs[0]
     msgs = check_training_range(25, 80, 10, 1200, is_peak_hour=0)
     assert len(msgs) == 1 and 'hors heure de pointe' in msgs[0]
+
+
+# ---------------------------------------------------------------------------
+# Consommation par défaut cohérente avec l'heure
+# ---------------------------------------------------------------------------
+
+from src.config import CONSO_DEFAULT_BY_PEAK
+from streamlit_app.utils_simple import default_consommation, sync_conso_default
+
+
+@pytest.mark.parametrize('heure', range(24))
+def test_conso_par_defaut_coherente_avec_l_heure(heure):
+    conso = default_consommation(heure)
+    peak = 1 if 18 <= heure <= 22 else 0
+    assert conso == (1100.0 if peak else 600.0)
+    # Le défaut ne déclenche jamais l'avertissement « hors plage d'entraînement »
+    assert check_training_range(25, 80, 10, conso, is_peak_hour=peak) == []
+
+
+def test_defauts_dans_les_plages_du_csv():
+    for peak, conso in CONSO_DEFAULT_BY_PEAK.items():
+        lo, hi = CONSO_RANGE_BY_PEAK[peak]
+        assert lo <= conso <= hi
+
+
+def test_sync_premier_affichage():
+    state = {'s_hour': 19}
+    sync_conso_default(state)
+    assert state['s_conso'] == 1100.0
+    state = {'s_hour': 15}
+    sync_conso_default(state)
+    assert state['s_conso'] == 600.0
+
+
+def test_sync_conserve_le_choix_utilisateur_dans_la_meme_periode():
+    state = {'s_hour': 15}
+    sync_conso_default(state)
+    state['s_conso'] = 750.0          # l'utilisateur modifie la consommation
+    state['s_hour'] = 10              # reste hors pointe
+    sync_conso_default(state)
+    assert state['s_conso'] == 750.0
+
+
+def test_sync_bascule_pointe_hors_pointe():
+    state = {'s_hour': 15}
+    sync_conso_default(state)
+    state['s_conso'] = 750.0
+    state['s_hour'] = 20              # passe en pointe
+    sync_conso_default(state)
+    assert state['s_conso'] == 1100.0
+    state['s_conso'] = 1250.0
+    state['s_hour'] = 23              # repasse hors pointe
+    sync_conso_default(state)
+    assert state['s_conso'] == 600.0

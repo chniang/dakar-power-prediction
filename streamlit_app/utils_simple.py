@@ -22,7 +22,8 @@ warnings.filterwarnings('ignore', category=UserWarning, module='keras')
 warnings.filterwarnings('ignore', category=UserWarning, module='lightgbm')
 
 from src.config import (QUARTIERS_DAKAR, COORDONNEES_QUARTIERS, QUARTIER_ADJUSTMENT,
-                        classify_risk, RISK_THRESHOLDS, TRAINING_RANGES, CONSO_RANGE_BY_PEAK)
+                        classify_risk, RISK_THRESHOLDS, TRAINING_RANGES, CONSO_RANGE_BY_PEAK,
+                        CONSO_DEFAULT_BY_PEAK)
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +65,7 @@ def create_time_features(date_time: datetime, hour_override: int = None) -> dict
     # ont été entraînés (et NON sur data_generator.py, qui n'a pas produit ce CSV).
     # Vérifié par tests/test_features.py contre les valeurs réelles du CSV.
     saison = 1 if month in SAISON_MONTHS else 0          # 1 = juin-août, 0 = reste
-    is_peak_hour = 1 if PEAK_HOUR_START <= hour <= PEAK_HOUR_END else 0  # 18h-22h
+    is_peak_hour = is_peak(hour)  # 18h-22h
     return {
         'hour': hour,
         'day_of_week': date_time.weekday(),
@@ -72,6 +73,25 @@ def create_time_features(date_time: datetime, hour_override: int = None) -> dict
         'saison': saison,
         'is_peak_hour': is_peak_hour,
     }
+
+def is_peak(hour: int) -> int:
+    return 1 if PEAK_HOUR_START <= hour <= PEAK_HOUR_END else 0
+
+
+def default_consommation(hour: int) -> float:
+    """Consommation par défaut cohérente avec l'heure : ~1 100 MW en pointe (18h-22h), ~600 MW sinon."""
+    return CONSO_DEFAULT_BY_PEAK[is_peak(hour)]
+
+
+def sync_conso_default(state, hour_key='s_hour', conso_key='s_conso'):
+    """Remet la consommation à sa valeur par défaut quand l'heure choisie bascule entre
+    pointe et hors pointe (ou au premier affichage). Tant que l'heure reste dans la même
+    période, la valeur choisie par l'utilisateur est conservée."""
+    peak = is_peak(state[hour_key])
+    if conso_key not in state or state.get('_conso_peak') != peak:
+        state[conso_key] = default_consommation(state[hour_key])
+    state['_conso_peak'] = peak
+
 
 def check_training_range(temperature, humidite, vitesse_vent, consommation, is_peak_hour):
     """Liste des entrées hors de la plage vue à l'entraînement (vide si tout est dans la plage)."""

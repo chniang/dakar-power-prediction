@@ -76,7 +76,7 @@ SLIDER_CONFIG = {
     'temperature':  {'min': 15.0,  'max':   45.0, 'default': 25.0,  'step':  0.5},
     'humidite':     {'min': 30.0,  'max':  100.0, 'default': 65.0,  'step':  1.0},
     'vitesse_vent': {'min':  0.0,  'max':   50.0, 'default': 15.0,  'step':  1.0},
-    'consommation': {'min': 400.0, 'max': 1500.0, 'default': 800.0, 'step': 10.0},
+    'consommation': {'min': 400.0, 'max': 1500.0, 'step': 10.0},  # défaut : CONSO_DEFAULT_BY_PEAK
 }
 
 # Plages observées dans synthetic_data_v2.csv (min / max arrondis vers l'extérieur).
@@ -93,6 +93,12 @@ TRAINING_RANGES = {
 CONSO_RANGE_BY_PEAK = {
     1: (900.0, 1400.0),
     0: (400.0, 900.0),
+}
+# Consommation par défaut du slider selon l'heure choisie (proche de la médiane du CSV :
+# 1 151 MW en pointe, 616 MW hors pointe).
+CONSO_DEFAULT_BY_PEAK = {
+    1: 1100.0,
+    0: 600.0,
 }
 
 # ============================================================================

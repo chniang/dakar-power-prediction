@@ -65,7 +65,7 @@ The LSTM expects shape `(1, 1, 9)` — single sample, single timestep, 9 feature
 
 ## Key Constraints
 
-- `TRAINING_RANGES` / `CONSO_RANGE_BY_PEAK` in `src/config.py` mirror the CSV min/max (checked by `tests/test_training_range.py`). Sliders stay wider on purpose: out-of-range inputs trigger a warning (`check_training_range()`), not a block.
+- `TRAINING_RANGES` / `CONSO_RANGE_BY_PEAK` in `src/config.py` mirror the CSV min/max (checked by `tests/test_training_range.py`). Sliders stay wider on purpose: out-of-range inputs trigger a warning (`check_training_range()`), not a block. The consumption slider default follows the chosen hour (`CONSO_DEFAULT_BY_PEAK`: 1100 MW peak / 600 MW off-peak, via `sync_conso_default()`); it is reset only when the hour crosses the peak/off-peak boundary.
 
 - Models must be loaded from the project root (paths like `'models/lgbm_model.pkl'`). Always run the app from the repo root.
 - LSTM is loaded with `compile=False` then recompiled manually to avoid Keras serialization compatibility issues.

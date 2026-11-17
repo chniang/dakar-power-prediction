@@ -24,6 +24,7 @@ from streamlit_app.utils_simple import (
     create_risk_trend_chart,
     check_training_range,
     format_risk,
+    sync_conso_default,
 )
 from src.config import QUARTIERS_DAKAR, classify_risk, RISK_THRESHOLDS, SLIDER_CONFIG, TRAINING_RANGES
 from src.weather_api import get_current_weather_dakar, get_weather_forecast_7days
@@ -78,10 +79,20 @@ def _range_help(key, unit):
 temperature  = st.sidebar.slider("Température (°C)",  _sc['temperature']['min'],  _sc['temperature']['max'],  _sc['temperature']['default'],  _sc['temperature']['step'],  key='s_temp', help=_range_help('temperature', '°C'))
 humidite     = st.sidebar.slider("Humidité (%)",       _sc['humidite']['min'],     _sc['humidite']['max'],     _sc['humidite']['default'],     _sc['humidite']['step'],     key='s_hum', help=_range_help('humidite', '%'))
 vitesse_vent = st.sidebar.slider("Vent (km/h)",        _sc['vitesse_vent']['min'], _sc['vitesse_vent']['max'], _sc['vitesse_vent']['default'], _sc['vitesse_vent']['step'], key='s_wind', help=_range_help('vitesse_vent', 'km/h'))
-consommation = st.sidebar.slider("Consommation (MW)",  _sc['consommation']['min'], _sc['consommation']['max'], _sc['consommation']['default'], _sc['consommation']['step'], help=_range_help('consommation', 'MW') + " En pointe (18h-22h) : 900-1400 MW ; hors pointe : 400-900 MW.")
+# Consommation par défaut selon l'heure (1 100 MW en pointe, 600 MW sinon) : initialisée au
+# premier affichage, puis remise à jour quand l'heure bascule entre pointe et hors pointe.
+if 's_hour' not in st.session_state:
+    st.session_state['s_hour'] = datetime.now().hour
+sync_conso_default(st.session_state)
+consommation = st.sidebar.slider(
+    "Consommation (MW)", min_value=_sc['consommation']['min'], max_value=_sc['consommation']['max'],
+    step=_sc['consommation']['step'], key='s_conso',
+    help=_range_help('consommation', 'MW') + " En pointe (18h-22h) : 900-1400 MW ; hors pointe : 400-900 MW. "
+         "Valeur par défaut ajustée à l'heure choisie.",
+)
 heure_pred   = st.sidebar.slider(
     "🕐 Heure de prédiction", 0, 23,
-    datetime.now().hour, 1,
+    step=1,
     key='s_hour',
     help="Changer l'heure affecte is_peak_hour (pointe 18h-22h, comme dans les données d'entraînement)",
 )
