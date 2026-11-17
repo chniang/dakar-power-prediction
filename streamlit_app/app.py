@@ -1,5 +1,6 @@
 ﻿import logging
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -25,11 +26,15 @@ from streamlit_app.utils_simple import (
     check_training_range,
     format_risk,
     sync_conso_default,
+    risk_message,
+    NO_TRANSLATE_JS,
 )
 from src.config import QUARTIERS_DAKAR, classify_risk, RISK_THRESHOLDS, SLIDER_CONFIG, TRAINING_RANGES
 from src.weather_api import get_current_weather_dakar, get_weather_forecast_7days
 
 st.set_page_config(page_title="Dakar Power", page_icon="⚡", layout="wide")
+# Empêche la traduction automatique du navigateur (voir NO_TRANSLATE_JS)
+components.html(NO_TRANSLATE_JS, height=0)
 
 # Clear old session state
 if 'initialized' not in st.session_state:
@@ -175,12 +180,8 @@ with tab1:
             with col3:
                 st.metric("⚠️ NIVEAU", niveau)
             
-            if risque < RISK_THRESHOLDS['faible']:
-                st.success(f"✅ Risque {niveau} ({format_risk(risque)})")
-            elif risque < RISK_THRESHOLDS['eleve']:
-                st.warning(f"⚠️ Risque {niveau} ({format_risk(risque)})")
-            else:
-                st.error(f"🚨 Risque {niveau} ({format_risk(risque)})")
+            _kind, _texte = risk_message(risque)
+            getattr(st, _kind)(_texte)
             st.caption(
                 f"Probabilité de coupure estimée par le modèle (moyenne LightGBM/LSTM × coefficient du quartier). "
                 f"Niveaux : FAIBLE < {RISK_THRESHOLDS['faible']} %, MOYEN < {RISK_THRESHOLDS['eleve']} %, ÉLEVÉ au-delà. "

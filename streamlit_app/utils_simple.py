@@ -181,6 +181,33 @@ def format_risk(risque_pct):
     return f"{risque_pct:.1f}%"
 
 
+def risk_message(risque_pct):
+    """(type de message Streamlit, texte) affiché sous la jauge pour un risque en %."""
+    niveau = classify_risk(risque_pct)
+    texte = f"Risque {niveau} ({format_risk(risque_pct)})"
+    if niveau == "FAIBLE":
+        return 'success', f"✅ {texte}"
+    if niveau == "MOYEN":
+        return 'warning', f"⚠️ {texte}"
+    return 'error', f"🚨 {texte}"
+
+
+# Streamlit sert ses pages avec <html lang="en"> : Chrome propose alors de « traduire »
+# l'app (déjà en français) vers le français, ce qui corrompt les libellés
+# (ex. « FAIBLE » → « ÉCHEC », « pics » → « photos »). Ce script, exécuté dans le
+# document parent, déclare la page en français et non traduisible.
+NO_TRANSLATE_JS = """<script>
+const d = window.parent.document;
+d.documentElement.lang = 'fr';
+d.documentElement.setAttribute('translate', 'no');
+d.documentElement.classList.add('notranslate');
+if (!d.querySelector('meta[name="google"][content="notranslate"]')) {
+  const m = d.createElement('meta'); m.name = 'google'; m.content = 'notranslate';
+  d.head.appendChild(m);
+}
+</script>"""
+
+
 def get_risk_color(risque_pct):
     if risque_pct < RISK_THRESHOLDS['faible']:
         return "#2ecc71"

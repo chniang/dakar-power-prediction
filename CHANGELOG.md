@@ -18,6 +18,7 @@ Tous les changements notables de ce projet seront documentés dans ce fichier.
 - `pyarrow==17.0.0` fixé dans les requirements (pip installait pyarrow 26, qui exige NumPy 2, ce qui faisait planter `st.dataframe` sur toute installation neuve) ; la CI installe désormais `requirements.txt`
 - Affichage « < 1 % » pour les probabilités inférieures à 1 % (jauge, carte, tableau, messages) ; valeur calculée et niveau inchangés
 - Consommation par défaut cohérente avec l'heure : 1 100 MW en pointe (18h-22h), 600 MW sinon ; remise à jour quand l'heure bascule de période, valeur modifiable (l'ancien défaut de 800 MW n'existait dans aucune des deux périodes du CSV)
+- « Risque ÉCHEC » au lieu de « Risque FAIBLE » : traduction automatique du navigateur (Streamlit déclare la page en anglais). La page est désormais déclarée `lang="fr"` et non traduisible (script dans l'app + patch de `index.html` dans le Dockerfile) ; message de niveau centralisé dans `risk_message()`
 - Fiche de données `docs/DATA.md` : générateur d'origine introuvable, contenu du CSV, taux par quartier, règles observées, limites
 
 ## [1.1.0] - 2026-06-17
