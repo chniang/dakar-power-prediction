@@ -1,6 +1,5 @@
 ﻿---
-title: Dakar Power Prediction
-emoji: ⚡
+title: Dakar Power Prediction:⚡
 colorFrom: yellow
 colorTo: red
 sdk: docker
