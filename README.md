@@ -1,9 +1,4 @@
-﻿---
-title: Dakar Power Prediction:⚡
-colorFrom: yellow
-colorTo: red
-sdk: docker
-pinned: false
+Dakar Power Prediction:⚡
 ---
 # ⚡ Dakar Power Prediction
 ### Système de Prédiction des Coupures d'Électricité à Dakar par Machine Learning
